@@ -37,4 +37,34 @@ class CustomerController extends _$CustomerController {
       return ref.refresh(customerRepositoryProvider).getCustomers();
     });
   }
+
+  Future<void> updateCustomer({
+    required String id,
+    required String name,
+    String? phone,
+    String? email,
+    String? address,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(customerRepositoryProvider)
+          .updateCustomer(
+            id: id,
+            name: name,
+            phone: phone,
+            email: email,
+            address: address,
+          );
+      return ref.refresh(customerRepositoryProvider).getCustomers();
+    });
+  }
+
+  Future<void> deleteCustomer(String id) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(customerRepositoryProvider).deleteCustomer(id);
+      return ref.refresh(customerRepositoryProvider).getCustomers();
+    });
+  }
 }

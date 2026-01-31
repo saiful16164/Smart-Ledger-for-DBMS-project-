@@ -1,6 +1,5 @@
 import 'package:dbms_project/core/constants/supabase_constants.dart';
 import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
-import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseTransactionRepository {

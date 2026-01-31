@@ -85,7 +85,9 @@ class CustomerCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          customer.isReceivable ? 'Due' : 'Advance',
+                          customer.isReceivable
+                              ? 'You\'ll Get'
+                              : 'You\'ll Give',
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: customer.isReceivable

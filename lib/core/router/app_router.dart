@@ -11,6 +11,8 @@ import 'package:dbms_project/features/settings/presentation/settings_screen.dart
 import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
 import 'package:dbms_project/features/customers/presentation/customer_detail_screen.dart';
 import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
+import 'package:dbms_project/features/settings/presentation/help_support_screen.dart';
+import 'package:dbms_project/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:dbms_project/features/auth/presentation/login_screen.dart';
 import 'package:dbms_project/features/auth/presentation/signup_screen.dart';
 import 'package:dbms_project/features/auth/presentation/auth_controller.dart';
@@ -28,7 +30,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: GoRouterRefreshStream(
-      ref.read(authStateProvider.stream),
+      ref
+          .read(authStateProvider.stream)
+          .distinct((previous, next) => previous?.id == next?.id),
     ),
     redirect: (context, state) {
       final isAuthenticated = authState.value != null;
@@ -85,9 +89,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          final type =
-              extra?['type'] as TransactionType? ?? TransactionType.income;
-          return AddTransactionScreen(initialType: type);
+          final customerId = extra?['customerId'] as String?;
+          return AddTransactionScreen(initialCustomerId: customerId);
         },
       ),
       GoRoute(
@@ -97,6 +100,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final customer = state.extra as CustomerModel;
           return CustomerDetailScreen(customer: customer);
         },
+      ),
+      GoRoute(
+        path: '/help-support',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HelpSupportScreen(),
+      ),
+      GoRoute(
+        path: '/privacy-policy',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PrivacyPolicyScreen(),
       ),
     ],
   );

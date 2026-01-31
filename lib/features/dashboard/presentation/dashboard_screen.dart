@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dbms_project/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dbms_project/features/customers/presentation/widgets/add_customer_sheet.dart';
-import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
+import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -101,27 +101,11 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 _buildQuickAction(
                   context,
-                  'Add Sale',
-                  Icons.add_shopping_cart,
+                  'Add Transaction',
+                  Icons.receipt_long,
                   () {
                     context
-                        .push(
-                          '/add-transaction',
-                          extra: {'type': TransactionType.income},
-                        )
-                        .then((_) => ref.refresh(dashboardControllerProvider));
-                  },
-                ),
-                _buildQuickAction(
-                  context,
-                  'Add Expense',
-                  Icons.remove_circle_outline,
-                  () {
-                    context
-                        .push(
-                          '/add-transaction',
-                          extra: {'type': TransactionType.expense},
-                        )
+                        .push('/add-transaction')
                         .then((_) => ref.refresh(dashboardControllerProvider));
                   },
                 ),

@@ -1,5 +1,5 @@
 import 'package:dbms_project/features/cashbook/presentation/cashbook_controller.dart';
-import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
+import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

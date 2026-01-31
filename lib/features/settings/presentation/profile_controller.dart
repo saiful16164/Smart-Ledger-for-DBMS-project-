@@ -23,11 +23,17 @@ class ProfileController extends _$ProfileController {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
-    state = const AsyncLoading();
+    // Don't set state to loading to avoid UI flicker
     state = await AsyncValue.guard(() async {
+      // Update Database Profile (primary source of truth)
       await ref
           .read(profileRepositoryProvider)
           .updateProfile(userId: user.id, fullName: fullName, phone: phone);
+
+      // Note: We intentionally don't update auth user metadata here
+      // because it triggers auth state changes that cause UI flicker.
+      // The profiles table is the source of truth for user info.
+
       return ref.refresh(profileRepositoryProvider).getProfile(user.id);
     });
   }

@@ -27,10 +27,7 @@ class SupabaseProfileRepository {
     String? fullName,
     String? phone,
   }) async {
-    final updates = <String, dynamic>{
-      'id': userId,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
+    final updates = <String, dynamic>{'id': userId};
     if (fullName != null) updates['full_name'] = fullName;
     if (phone != null) updates['phone'] = phone;
 

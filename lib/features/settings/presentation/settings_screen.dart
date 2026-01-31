@@ -3,153 +3,271 @@ import 'package:dbms_project/features/settings/presentation/profile_controller.d
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dbms_project/core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authUser = ref.watch(authStateProvider).value;
-    final profileAsync = ref.watch(profileControllerProvider);
-    final profile = profileAsync.value;
+    ref.listen(profileControllerProvider, (previous, next) {
+      if (next is AsyncError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${next.error}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    });
 
-    final displayName =
-        profile?.fullName ??
-        authUser?.userMetadata?['full_name'] as String? ??
-        'My Store';
+    final authEmail = ref.watch(
+      authStateProvider.select((s) => s.valueOrNull?.email),
+    );
+    final profileAsync = ref.watch(profileControllerProvider);
+    // Use valueOrNull to keep showing previous data during loading
+    final profile = profileAsync.valueOrNull;
+
+    final displayName = profile?.fullName ?? 'My Store';
     final displayPhone = profile?.phone ?? 'No Phone Number';
-    final displayEmail = authUser?.email ?? 'No Email';
+    final displayEmail = authEmail ?? 'No Email';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        children: [
-          // Profile Header
-          Container(
-            padding: const EdgeInsets.all(24),
-            color: AppColors.primary.withOpacity(0.05),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: AppColors.primary,
-                  child: Text(
-                    displayName.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+      backgroundColor: Colors.grey[50], // Light background
+      appBar: AppBar(
+        title: const Text('Settings'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Profile Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+              child: Column(
+                children: [
+                  Stack(
                     children: [
-                      Text(
-                        displayName,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        child: Text(
+                          displayName.substring(0, 1).toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 32,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      Text(
-                        displayPhone,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        displayEmail,
-                        style: const TextStyle(color: Colors.grey),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () => _showEditProfileDialog(
+                            context,
+                            ref,
+                            displayName,
+                            profile?.phone,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => _showEditProfileDialog(
-                    context,
-                    ref,
+                  const SizedBox(height: 16),
+                  Text(
                     displayName,
-                    profile?.phone,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  icon: const Icon(Icons.edit_outlined),
+                  const SizedBox(height: 4),
+                  Text(
+                    displayPhone,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    displayEmail,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // General Settings Card
+            _buildSettingsCard(
+              title: 'General',
+              children: [
+                SwitchListTile(
+                  secondary: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  title: const Text('Notifications'),
+                  subtitle: const Text('Receive alerts for transactions'),
+                  contentPadding: EdgeInsets.zero,
+                  value: true,
+                  onChanged: (value) {},
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          if (profileAsync.isLoading) const LinearProgressIndicator(),
+            const SizedBox(height: 24),
 
-          // App Settings
-          _buildSectionHeader(context, 'App Settings'),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: const Text('Language'),
-            trailing: const Text('English'),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.currency_exchange),
-            title: const Text('Currency'),
-            trailing: const Text('BDT (৳)'),
-            onTap: () {},
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.dark_mode_outlined),
-            title: const Text('Dark Mode'),
-            value: false, // TODO: Connect to theme provider
-            onChanged: (value) {},
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.notifications_outlined),
-            title: const Text('Notifications'),
-            value: true,
-            onChanged: (value) {},
-          ),
+            // Support Card
+            _buildSettingsCard(
+              title: 'Support',
+              children: [
+                _buildListTile(
+                  context,
+                  icon: Icons.help_outline,
+                  color: Colors.blue,
+                  title: 'Help & Support',
+                  onTap: () => context.push('/help-support'),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1),
+                ),
+                _buildListTile(
+                  context,
+                  icon: Icons.privacy_tip_outlined,
+                  color: Colors.green,
+                  title: 'Privacy Policy',
+                  onTap: () => context.push('/privacy-policy'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
 
-          const Divider(),
-
-          // Support
-          _buildSectionHeader(context, 'Support'),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('Help & Support'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy Policy'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
-
-          const Divider(),
-          const SizedBox(height: 16),
-
-          // Logout
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                ref.read(authControllerProvider.notifier).signOut();
-              },
-              icon: const Icon(Icons.logout),
-              label: const Text('Log Out'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error.withOpacity(0.1),
-                foregroundColor: AppColors.error,
-                elevation: 0,
+            // Logout Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(authControllerProvider.notifier).signOut();
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('Log Out'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error.withOpacity(0.1),
+                  foregroundColor: AppColors.error,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 32),
-          const Center(
-            child: Text('Version 1.0.0', style: TextStyle(color: Colors.grey)),
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 16),
+            const Text(
+              'Version 1.0.0',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildSettingsCard({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListTile(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+      onTap: onTap,
     );
   }
 
@@ -202,19 +320,6 @@ class SettingsScreen extends ConsumerWidget {
             child: const Text('Save'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: AppColors.primary,
-          fontWeight: FontWeight.bold,
-        ),
       ),
     );
   }

@@ -52,6 +52,28 @@ class SupabaseCustomerRepository {
     return CustomerModel.fromJson(data);
   }
 
+  Future<CustomerModel> updateCustomer({
+    required String id,
+    required String name,
+    String? phone,
+    String? email,
+    String? address,
+  }) async {
+    final data = await _supabase
+        .from(SupabaseConstants.tableCustomers)
+        .update({
+          'name': name,
+          'phone': phone,
+          'email': email,
+          'address': address,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+    return CustomerModel.fromJson(data);
+  }
+
   Future<void> updateBalance({
     required String customerId,
     required double amount,
@@ -71,5 +93,12 @@ class SupabaseCustomerRepository {
           .update({'total_received': customer.totalReceived + amount})
           .eq('id', customerId);
     }
+  }
+
+  Future<void> deleteCustomer(String id) async {
+    await _supabase
+        .from(SupabaseConstants.tableCustomers)
+        .delete()
+        .eq('id', id);
   }
 }

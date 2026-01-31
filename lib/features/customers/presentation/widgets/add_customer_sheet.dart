@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dbms_project/core/theme/app_colors.dart';
 import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
+import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
 import 'package:go_router/go_router.dart';
 
 class AddCustomerSheet extends ConsumerStatefulWidget {
-  const AddCustomerSheet({super.key});
+  final CustomerModel? customer;
+
+  const AddCustomerSheet({super.key, this.customer});
 
   @override
   ConsumerState<AddCustomerSheet> createState() => _AddCustomerSheetState();
@@ -18,24 +21,51 @@ class _AddCustomerSheetState extends ConsumerState<AddCustomerSheet> {
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
 
+  bool get isEditing => widget.customer != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEditing) {
+      _nameController.text = widget.customer!.name;
+      _phoneController.text = widget.customer!.phone ?? '';
+      _emailController.text = widget.customer!.email ?? '';
+      _addressController.text = widget.customer!.address ?? '';
+    }
+  }
+
   Future<void> _saveCustomer() async {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      await ref
-          .read(customerControllerProvider.notifier)
-          .addCustomer(
-            name: _nameController.text.trim(),
-            phone: _phoneController.text.trim(),
-            email: _emailController.text.trim(),
-            address: _addressController.text.trim(),
-          );
+      final notifier = ref.read(customerControllerProvider.notifier);
+
+      if (isEditing) {
+        await notifier.updateCustomer(
+          id: widget.customer!.id,
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim(),
+          address: _addressController.text.trim(),
+        );
+      } else {
+        await notifier.addCustomer(
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim(),
+          address: _addressController.text.trim(),
+        );
+      }
 
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Customer Added Successfully'),
+          SnackBar(
+            content: Text(
+              isEditing
+                  ? 'Customer Updated Successfully'
+                  : 'Customer Added Successfully',
+            ),
             backgroundColor: AppColors.success,
           ),
         );
@@ -77,7 +107,7 @@ class _AddCustomerSheetState extends ConsumerState<AddCustomerSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Add New Customer',
+                  isEditing ? 'Edit Customer' : 'Add New Customer',
                   style: Theme.of(
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -177,7 +207,7 @@ class _AddCustomerSheetState extends ConsumerState<AddCustomerSheet> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Save Customer'),
+                  : Text(isEditing ? 'Update Customer' : 'Save Customer'),
             ),
           ],
         ),

@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dbms_project/core/theme/app_colors.dart';
+import 'package:dbms_project/core/services/email_service.dart';
 import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
 import 'package:dbms_project/features/transactions/presentation/transaction_controller.dart';
+import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
+import 'package:dbms_project/features/settings/presentation/profile_controller.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-enum TransactionType { income, expense }
-
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  final TransactionType initialType;
   final String? initialCustomerId;
 
-  const AddTransactionScreen({
-    super.key,
-    this.initialType = TransactionType.income,
-    this.initialCustomerId,
-  });
+  const AddTransactionScreen({super.key, this.initialCustomerId});
 
   @override
   ConsumerState<AddTransactionScreen> createState() =>
@@ -25,317 +21,366 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
 
 class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TransactionType _selectedType;
-  final _amountController = TextEditingController();
+  final _givenController = TextEditingController();
+  final _receivedController = TextEditingController();
   final _noteController = TextEditingController();
   final _dateController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String? _selectedCustomerId;
+  bool _isSendingEmail = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedType = widget.initialType;
     _selectedCustomerId = widget.initialCustomerId;
     _dateController.text = DateFormat('dd MMM yyyy').format(_selectedDate);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = _selectedType == TransactionType.income;
-    final primaryColor = isIncome ? AppColors.success : AppColors.error;
     final customersAsync = ref.watch(customerControllerProvider);
     final transactionState = ref.watch(transactionControllerProvider);
-    final isLoading = transactionState.isLoading;
+    final isLoading = transactionState.isLoading || _isSendingEmail;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isIncome ? 'Add Income' : 'Add Expense'),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        title: const Text('Add Transaction'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Amount Input Header
-            Container(
-              color: primaryColor,
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Amount',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    cursorColor: Colors.white,
-                    decoration: InputDecoration(
-                      prefixText: '৳ ',
-                      prefixStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Customer Selector
+                customersAsync.when(
+                  data: (customers) {
+                    return DropdownButtonFormField<String>(
+                      value: _selectedCustomerId,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Party / Customer',
+                        prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                       ),
-                      border: InputBorder.none,
-                      hintText: '0',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter amount';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'Invalid amount';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
+                      items: customers.map((c) {
+                        return DropdownMenuItem(
+                          value: c.id,
+                          child: Text(c.name),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomerId = value;
+                        });
+                      },
+                      validator: (value) =>
+                          value == null ? 'Please select a customer' : null,
+                    );
+                  },
+                  loading: () => const LinearProgressIndicator(),
+                  error: (err, _) => Text('Error loading customers: $err'),
+                ),
+                const SizedBox(height: 24),
 
-            // Form Fields
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
+                // Dual Inputs: Selling (Given) / Received (Got)
+                Row(
                   children: [
-                    // Type Selector
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildTypeButton(
-                              'Income',
-                              TransactionType.income,
-                            ),
-                          ),
-                          Expanded(
-                            child: _buildTypeButton(
-                              'Expense',
-                              TransactionType.expense,
-                            ),
-                          ),
-                        ],
+                    Expanded(
+                      child: _buildAmountField(
+                        controller: _givenController,
+                        label: 'Selling (Sold)',
+                        color: AppColors.error,
+                        icon: Icons.arrow_upward,
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Customer Selector
-                    customersAsync.when(
-                      data: (customers) {
-                        // Filter customers if needed, but showing all is fine.
-                        // Maybe sort by name?
-                        // For Dropdown, we need unique items.
-                        return DropdownButtonFormField<String>(
-                          value: _selectedCustomerId,
-                          decoration: const InputDecoration(
-                            labelText: 'Select Party / Customer',
-                            prefixIcon: Icon(Icons.person_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                            ),
-                          ),
-                          items: customers.map((c) {
-                            return DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.name),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCustomerId = value;
-                            });
-                          },
-                          validator: (value) {
-                            // Optional? Or required? Usually transaction is linked to customer.
-                            // If not linked, it's just cash transaction.
-                            // Let's make it optional for now, as maybe it's general sales.
-                            return null;
-                          },
-                        );
-                      },
-                      loading: () => const LinearProgressIndicator(),
-                      error: (err, _) => Text('Error loading customers: $err'),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Date Picker
-                    TextFormField(
-                      controller: _dateController,
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Date',
-                        prefixIcon: Icon(Icons.calendar_today),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                        ),
-                      ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _selectedDate = picked;
-                            _dateController.text = DateFormat(
-                              'dd MMM yyyy',
-                            ).format(picked);
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Note
-                    TextFormField(
-                      controller: _noteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Note (Optional)',
-                        prefixIcon: Icon(Icons.note_alt_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                        ),
-                      ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Submit Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: isLoading ? null : _saveTransaction,
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Save Transaction',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildAmountField(
+                        controller: _receivedController,
+                        label: 'Received (Got)',
+                        color: AppColors.success,
+                        icon: Icons.arrow_downward,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+                const SizedBox(height: 16),
 
-  Future<void> _saveTransaction() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await ref
-            .read(transactionControllerProvider.notifier)
-            .addTransaction(
-              amount: double.parse(_amountController.text),
-              type: _selectedType,
-              customerId: _selectedCustomerId,
-              date: _selectedDate,
-              note: _noteController.text.isEmpty ? null : _noteController.text,
-            );
-
-        if (mounted) {
-          context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Transaction saved successfully!')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  Widget _buildTypeButton(String label, TransactionType type) {
-    final isSelected = _selectedType == type;
-    final color = type == TransactionType.income
-        ? AppColors.success
-        : AppColors.error;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedType = type;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                // Note
+                TextFormField(
+                  controller: _noteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Note (Description)',
+                    prefixIcon: Icon(Icons.note_alt_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
                   ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? color : AppColors.textSecondaryLight,
-              fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(height: 16),
+
+                // Date Picker
+                TextFormField(
+                  controller: _dateController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    prefixIcon: Icon(Icons.calendar_today),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                  ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDate = picked;
+                        _dateController.text = DateFormat(
+                          'dd MMM yyyy',
+                        ).format(picked);
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // Save Button
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: isLoading ? null : _saveTransaction,
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Save Transaction',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildAmountField({
+    required TextEditingController controller,
+    required String label,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: color),
+            prefixText: '৳ ',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: color.withOpacity(0.5)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: color.withOpacity(0.5)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: color, width: 2),
+            ),
+            hintText: '0',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveTransaction() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final givenText = _givenController.text.trim();
+    final receivedText = _receivedController.text.trim();
+
+    final givenAmount = double.tryParse(givenText) ?? 0;
+    final receivedAmount = double.tryParse(receivedText) ?? 0;
+
+    if (givenAmount == 0 && receivedAmount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter at least one amount'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final controller = ref.read(transactionControllerProvider.notifier);
+
+      // 1. Process "Given" (Expense)
+      if (givenAmount > 0) {
+        await controller.addTransaction(
+          amount: givenAmount,
+          type: TransactionType.expense,
+          customerId: _selectedCustomerId,
+          date: _selectedDate,
+          note: _noteController.text.isEmpty ? 'Given' : _noteController.text,
+        );
+      }
+
+      // 2. Process "Received" (Income)
+      if (receivedAmount > 0) {
+        await controller.addTransaction(
+          amount: receivedAmount,
+          type: TransactionType.income,
+          customerId: _selectedCustomerId,
+          date: _selectedDate,
+          note: _noteController.text.isEmpty
+              ? 'Received'
+              : _noteController.text,
+        );
+      }
+
+      // 3. Calculate Net Amount (Given - Received = Amount customer owes)
+      final netAmount = givenAmount - receivedAmount;
+
+      // 4. If customer owes money (net > 0), send payment reminder email
+      if (netAmount > 0 && _selectedCustomerId != null) {
+        await _sendPaymentReminderEmail(netAmount);
+      }
+
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              netAmount > 0
+                  ? 'Transaction saved! Payment reminder sent.'
+                  : 'Transaction(s) saved successfully!',
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendPaymentReminderEmail(double amountOwed) async {
+    setState(() => _isSendingEmail = true);
+
+    try {
+      // Get the customer details
+      final customers = ref.read(customerControllerProvider).valueOrNull ?? [];
+      final customer = customers.firstWhere(
+        (c) => c.id == _selectedCustomerId,
+        orElse: () => throw Exception('Customer not found'),
+      );
+
+      // Check if customer has email
+      if (customer.email == null || customer.email!.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Customer has no email address. Skipping email.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get store name from profile
+      final profile = ref.read(profileControllerProvider).valueOrNull;
+      final storeName = profile?.fullName ?? 'Smart Ledger Store';
+
+      // Send the email
+      final success = await EmailService.sendPaymentReminder(
+        customerName: customer.name,
+        customerEmail: customer.email!,
+        amount: amountOwed,
+        note: _noteController.text.isEmpty
+            ? 'Items purchased'
+            : _noteController.text,
+        date: DateFormat('dd MMM yyyy').format(_selectedDate),
+        storeName: storeName,
+      );
+
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Transaction saved, but email failed to send.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Email error: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingEmail = false);
+      }
+    }
   }
 }

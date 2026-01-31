@@ -1,16 +1,48 @@
-import 'package:dbms_project/features/customers/presentation/customer_detail_controller.dart';
-import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:dbms_project/core/theme/app_colors.dart';
+import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
+import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
+import 'package:dbms_project/features/customers/presentation/customer_detail_controller.dart';
+
+import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
+import 'package:dbms_project/features/customers/presentation/widgets/add_customer_sheet.dart';
 
 class CustomerDetailScreen extends ConsumerWidget {
   final CustomerModel customer;
 
   const CustomerDetailScreen({super.key, required this.customer});
+
+  Future<void> _deleteCustomer(BuildContext context, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Customer'),
+        content: Text(
+          'Are you sure you want to delete ${customer.name}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      ref.read(customerControllerProvider.notifier).deleteCustomer(customer.id);
+      context.pop(); // Go back to list
+      // List will auto-refresh due to Riverpod watching the stream/provider
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,12 +51,40 @@ class CustomerDetailScreen extends ConsumerWidget {
       customerTransactionsProvider(customer.id),
     );
 
+    // Watch for customer updates (e.g. balance change)
+    final customersAsync = ref.watch(customerControllerProvider);
+    final updatedCustomer = customersAsync.maybeWhen(
+      data: (customers) {
+        try {
+          return customers.firstWhere((c) => c.id == customer.id);
+        } catch (_) {
+          return customer;
+        }
+      },
+      orElse: () => customer,
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(customer.name),
+        title: Text(updatedCustomer.name),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.edit)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
+          IconButton(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) =>
+                    AddCustomerSheet(customer: updatedCustomer),
+              );
+            },
+            icon: const Icon(Icons.edit),
+          ),
+          IconButton(
+            onPressed: () => _deleteCustomer(context, ref),
+            icon: const Icon(Icons.delete_outline, color: Colors.white),
+            tooltip: 'Delete Customer',
+          ),
         ],
       ),
       body: Column(
@@ -44,7 +104,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                   radius: 32,
                   backgroundColor: Colors.white,
                   child: Text(
-                    customer.name.substring(0, 1).toUpperCase(),
+                    updatedCustomer.name.substring(0, 1).toUpperCase(),
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -62,7 +122,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '৳${customer.absBalance.toStringAsFixed(0)}',
+                  '৳${updatedCustomer.absBalance.toStringAsFixed(0)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 32,
@@ -70,7 +130,9 @@ class CustomerDetailScreen extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  customer.isReceivable ? 'You will get' : 'You will give',
+                  updatedCustomer.isReceivable
+                      ? 'You will get'
+                      : 'You will give',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontWeight: FontWeight.w600,
@@ -144,23 +206,78 @@ class CustomerDetailScreen extends ConsumerWidget {
 
                     final isIncome = transaction.type == TransactionType.income;
 
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        transaction.note ?? (isIncome ? 'Received' : 'Given'),
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
                       ),
-                      subtitle: Text(
-                        DateFormat('dd MMM hh:mm a').format(transaction.date),
-                        style: const TextStyle(
-                          color: AppColors.textSecondaryLight,
-                        ),
-                      ),
-                      trailing: Text(
-                        '৳${transaction.amount}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isIncome ? AppColors.success : AppColors.error,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Note and Date
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    transaction.note?.isNotEmpty == true
+                                        ? transaction.note!
+                                        : (isIncome
+                                              ? 'Payment Received'
+                                              : 'Items Sold'),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  DateFormat(
+                                    'dd MMM, hh:mm a',
+                                  ).format(transaction.date),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Divider(),
+                            const SizedBox(height: 8),
+                            // Amount and Type
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  isIncome ? 'Received' : 'Sold',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: isIncome
+                                        ? AppColors.success
+                                        : AppColors.error,
+                                  ),
+                                ),
+                                Text(
+                                  isIncome
+                                      ? '+ ৳${transaction.amount.toStringAsFixed(0)}'
+                                      : '- ৳${transaction.amount.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: isIncome
+                                        ? AppColors.success
+                                        : AppColors.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -183,62 +300,30 @@ class CustomerDetailScreen extends ConsumerWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  context
-                      .push(
-                        '/add-transaction',
-                        extra: {
-                          'type': TransactionType.income,
-                          'customerId': customer.id,
-                        },
-                      )
-                      .then(
-                        (_) => ref.refresh(
-                          customerTransactionsProvider(customer.id),
-                        ),
-                      );
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Received'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              context
+                  .push('/add-transaction', extra: {'customerId': customer.id})
+                  .then(
+                    (_) =>
+                        ref.refresh(customerTransactionsProvider(customer.id)),
+                  );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  context
-                      .push(
-                        '/add-transaction',
-                        extra: {
-                          'type': TransactionType.expense,
-                          'customerId': customer.id,
-                        },
-                      )
-                      .then(
-                        (_) => ref.refresh(
-                          customerTransactionsProvider(customer.id),
-                        ),
-                      );
-                },
-                icon: const Icon(Icons.remove),
-                label: const Text('Given'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
+            child: const Text(
+              'Add Transaction',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-          ],
+          ),
         ),
       ),
     );

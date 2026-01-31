@@ -1,4 +1,4 @@
-import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
+enum TransactionType { income, expense }
 
 class TransactionModel {
   final String id;

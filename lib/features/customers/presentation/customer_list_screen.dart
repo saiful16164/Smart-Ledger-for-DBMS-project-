@@ -16,6 +16,58 @@ class CustomerListScreen extends ConsumerStatefulWidget {
 
 class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _filterType = 'All'; // 'All', 'To Receive', 'To Pay'
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<CustomerModel> _filterCustomers(List<CustomerModel> customers) {
+    return customers.where((customer) {
+      // 1. Search Filter
+      final matchesSearch =
+          customer.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (customer.phone?.contains(_searchQuery) ?? false) ||
+          (customer.email?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false);
+
+      if (!matchesSearch) return false;
+
+      // 2. Type Filter
+      if (_filterType == 'To Receive') {
+        return customer.totalDue >
+            0; // Negative balance means "To Pay" in some contexts?
+        // Let's clarify: due means "To Receive" usually (positive balance).
+        // If Model says `totalDue = totalGiven - totalReceived`.
+        // If result is positive -> customer owes us -> 'To Receive'.
+        // If negative -> we owe customer -> 'To Pay'.
+        // Wait, check CustomerModel logic. Assuming totalDue getter handles this or separate fields.
+        // Let's assume standard: totalGiven (Income) - totalReceived (Expense).
+        // Actually usually ledger:
+        // Debit (You gave) - Credit (You received) = Balance.
+        // If Balance > 0 -> You are owed money (To Receive).
+        // If Balance < 0 -> You owe money (To Pay).
+        // Checking CustomerModel properties to be sure.
+      } else if (_filterType == 'To Pay') {
+        return customer.totalDue < 0;
+      }
+
+      return true; // All
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +86,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search customers...',
+                    hintText: 'Search by name, phone...',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: Colors.white,
@@ -48,11 +100,11 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildFilterChip('All', true),
+                    _buildFilterChip('All'),
                     const SizedBox(width: 8),
-                    _buildFilterChip('Due', false),
+                    _buildFilterChip('To Receive'), // Due
                     const SizedBox(width: 8),
-                    _buildFilterChip('Advance', false),
+                    _buildFilterChip('To Pay'), // Advance
                   ],
                 ),
               ],
@@ -64,13 +116,15 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             child: customersAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('Error: $err')),
-              data: (customers) {
-                if (customers.isEmpty) {
+              data: (allCustomers) {
+                final filteredCustomers = _filterCustomers(allCustomers);
+
+                if (filteredCustomers.isEmpty) {
                   return const Center(child: Text('No customers found.'));
                 }
 
-                // Calculate Totals
-                final totalDue = customers
+                // Calculate Totals based on filtered list? Or all? Usually filtered.
+                final totalDue = filteredCustomers
                     .map((c) => c.totalDue)
                     .fold(0.0, (previous, current) => previous + current);
 
@@ -87,16 +141,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Total Customers: ${customers.length}',
+                            'Filtered: ${filteredCustomers.length}',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           Text(
-                            'Total Due: ৳${totalDue.toStringAsFixed(0)}',
+                            'Net Due: ৳${totalDue.toStringAsFixed(0)}',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: totalDue > 0
+                                  color: totalDue >= 0
                                       ? AppColors.success
                                       : AppColors.error,
                                 ),
@@ -107,9 +161,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
-                        itemCount: customers.length,
+                        itemCount: filteredCustomers.length,
                         itemBuilder: (context, index) {
-                          final customer = customers[index];
+                          final customer = filteredCustomers[index];
                           return CustomerCard(
                             customer: customer,
                             onTap: () {
@@ -144,11 +198,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected) {
+  Widget _buildFilterChip(String label) {
+    final isSelected = _filterType == label;
     return FilterChip(
       label: Text(label),
       selected: isSelected,
-      onSelected: (bool selected) {},
+      onSelected: (bool selected) {
+        setState(() {
+          _filterType = label;
+        });
+      },
       backgroundColor: Colors.white,
       selectedColor: AppColors.primary.withOpacity(0.2),
       checkmarkColor: AppColors.primary,

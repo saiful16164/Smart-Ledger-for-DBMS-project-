@@ -25,7 +25,7 @@ final profileRepositoryProvider =
 // ignore: unused_element
 typedef ProfileRepositoryRef =
     AutoDisposeProviderRef<SupabaseProfileRepository>;
-String _$profileControllerHash() => r'8f990d8a29cff760262bab0cb82a81962fc4d3ac';
+String _$profileControllerHash() => r'0759dc14d0d1a4e3d81d2c8f916a095d4d653022';
 
 /// See also [ProfileController].
 @ProviderFor(ProfileController)

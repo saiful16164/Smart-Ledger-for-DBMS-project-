@@ -1,8 +1,7 @@
-import 'package:dbms_project/core/constants/supabase_constants.dart';
 import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
 import 'package:dbms_project/features/transactions/data/supabase_transaction_repository.dart';
 import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
-import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -61,7 +60,12 @@ class TransactionController extends _$TransactionController {
       }
 
       // 3. Refresh self (recent transactions)
+      // 3. Refresh self (recent transactions)
       return ref.refresh(transactionRepositoryProvider).getRecentTransactions();
     });
+
+    if (state.hasError) {
+      throw state.error!;
+    }
   }
 }
