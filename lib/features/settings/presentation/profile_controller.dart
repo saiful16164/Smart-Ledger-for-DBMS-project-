@@ -1,5 +1,5 @@
-import 'package:dbms_project/features/settings/data/supabase_profile_repository.dart';
-import 'package:dbms_project/features/settings/domain/models/profile_model.dart';
+import 'package:smart_ledger/features/settings/data/supabase_profile_repository.dart';
+import 'package:smart_ledger/features/settings/domain/models/profile_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

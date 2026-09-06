@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
-import 'package:dbms_project/core/services/email_service.dart';
-import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
-import 'package:dbms_project/features/transactions/presentation/transaction_controller.dart';
-import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
-import 'package:dbms_project/features/settings/presentation/profile_controller.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
+import 'package:smart_ledger/core/services/email_service.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_controller.dart';
+import 'package:smart_ledger/features/transactions/presentation/transaction_controller.dart';
+import 'package:smart_ledger/features/transactions/domain/models/transaction_model.dart';
+import 'package:smart_ledger/features/settings/presentation/profile_controller.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -43,12 +43,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final isLoading = transactionState.isLoading || _isSendingEmail;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Transaction'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Add Transaction'), elevation: 0),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16),

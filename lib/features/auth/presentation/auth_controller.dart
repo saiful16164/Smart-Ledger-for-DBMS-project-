@@ -1,4 +1,4 @@
-import 'package:dbms_project/features/auth/data/auth_repository.dart';
+import 'package:smart_ledger/features/auth/data/auth_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

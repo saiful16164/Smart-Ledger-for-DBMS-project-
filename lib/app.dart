@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/core/router/app_router.dart';
-import 'package:dbms_project/core/theme/app_theme.dart';
-import 'package:dbms_project/core/constants/app_constants.dart';
+import 'package:smart_ledger/core/router/app_router.dart';
+import 'package:smart_ledger/core/theme/app_theme.dart';
+import 'package:smart_ledger/core/constants/app_constants.dart';
 
 class SmartLedgerApp extends ConsumerWidget {
   const SmartLedgerApp({super.key});

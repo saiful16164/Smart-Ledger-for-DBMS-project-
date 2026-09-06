@@ -1,6 +1,7 @@
-import 'package:dbms_project/core/constants/supabase_constants.dart';
-import 'package:dbms_project/features/customers/data/supabase_customer_repository.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
+
+
+import 'package:smart_ledger/features/customers/data/supabase_customer_repository.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,9 +24,10 @@ class CustomerController extends _$CustomerController {
     String? phone,
     String? email,
     String? address,
+    PartyType partyType = PartyType.customer,
   }) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    try {
       await ref
           .read(customerRepositoryProvider)
           .addCustomer(
@@ -33,9 +35,15 @@ class CustomerController extends _$CustomerController {
             phone: phone,
             email: email,
             address: address,
+            partyType: partyType,
           );
-      return ref.refresh(customerRepositoryProvider).getCustomers();
-    });
+      state = AsyncData(
+        await ref.refresh(customerRepositoryProvider).getCustomers(),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   Future<void> updateCustomer({
@@ -44,9 +52,10 @@ class CustomerController extends _$CustomerController {
     String? phone,
     String? email,
     String? address,
+    PartyType? partyType,
   }) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    try {
       await ref
           .read(customerRepositoryProvider)
           .updateCustomer(
@@ -55,16 +64,27 @@ class CustomerController extends _$CustomerController {
             phone: phone,
             email: email,
             address: address,
+            partyType: partyType,
           );
-      return ref.refresh(customerRepositoryProvider).getCustomers();
-    });
+      state = AsyncData(
+        await ref.refresh(customerRepositoryProvider).getCustomers(),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   Future<void> deleteCustomer(String id) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    try {
       await ref.read(customerRepositoryProvider).deleteCustomer(id);
-      return ref.refresh(customerRepositoryProvider).getCustomers();
-    });
+      state = AsyncData(
+        await ref.refresh(customerRepositoryProvider).getCustomers(),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 }

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
-import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
-import 'package:dbms_project/features/customers/presentation/customer_detail_controller.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_controller.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_detail_controller.dart';
 
-import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
-import 'package:dbms_project/features/customers/presentation/widgets/add_customer_sheet.dart';
+import 'package:smart_ledger/features/transactions/domain/models/transaction_model.dart';
+import 'package:smart_ledger/features/customers/presentation/widgets/add_customer_sheet.dart';
 
 class CustomerDetailScreen extends ConsumerWidget {
   final CustomerModel customer;
@@ -64,6 +65,8 @@ class CustomerDetailScreen extends ConsumerWidget {
       orElse: () => customer,
     );
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(updatedCustomer.name),
@@ -82,7 +85,7 @@ class CustomerDetailScreen extends ConsumerWidget {
           ),
           IconButton(
             onPressed: () => _deleteCustomer(context, ref),
-            icon: const Icon(Icons.delete_outline, color: Colors.white),
+            icon: const Icon(Icons.delete_outline),
             tooltip: 'Delete Customer',
           ),
         ],
@@ -146,14 +149,72 @@ class CustomerDetailScreen extends ConsumerWidget {
                       context,
                       icon: Icons.call,
                       label: 'Call',
-                      onTap: () {},
+                      onTap: () async {
+                        if (updatedCustomer.phone != null &&
+                            updatedCustomer.phone!.isNotEmpty) {
+                          final Uri phoneUri = Uri(
+                            scheme: 'tel',
+                            path: updatedCustomer.phone,
+                          );
+                          if (await canLaunchUrl(phoneUri)) {
+                            await launchUrl(phoneUri);
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('No phone number available'),
+                            ),
+                          );
+                        }
+                      },
                     ),
                     const SizedBox(width: 24),
                     _buildActionButton(
                       context,
                       icon: Icons.message,
                       label: 'SMS',
-                      onTap: () {},
+                      onTap: () async {
+                        if (updatedCustomer.phone != null &&
+                            updatedCustomer.phone!.isNotEmpty) {
+                          final Uri smsUri = Uri.parse(
+                            'sms:${updatedCustomer.phone}',
+                          );
+                          await launchUrl(
+                            smsUri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('No phone number available'),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 24),
+                    _buildActionButton(
+                      context,
+                      icon: Icons.email,
+                      label: 'Email',
+                      onTap: () async {
+                        if (updatedCustomer.email != null &&
+                            updatedCustomer.email!.isNotEmpty) {
+                          final Uri emailUri = Uri.parse(
+                            'mailto:${updatedCustomer.email}',
+                          );
+                          await launchUrl(
+                            emailUri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('No email address available'),
+                            ),
+                          );
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -211,7 +272,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey.shade200),
+                        side: BorderSide(color: colorScheme.outlineVariant),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -229,10 +290,10 @@ class CustomerDetailScreen extends ConsumerWidget {
                                         : (isIncome
                                               ? 'Payment Received'
                                               : 'Items Sold'),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: AppColors.textPrimary,
+                                      color: colorScheme.onSurface,
                                     ),
                                   ),
                                 ),
@@ -240,9 +301,11 @@ class CustomerDetailScreen extends ConsumerWidget {
                                   DateFormat(
                                     'dd MMM, hh:mm a',
                                   ).format(transaction.date),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondaryLight,
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.65,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -291,7 +354,7 @@ class CustomerDetailScreen extends ConsumerWidget {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
-import 'package:dbms_project/features/ledger/domain/models/transaction_model.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
+import 'package:smart_ledger/features/ledger/domain/models/transaction_model.dart';
 import 'package:intl/intl.dart';
 
 class CustomerLedgerScreen extends ConsumerStatefulWidget {
@@ -47,6 +47,8 @@ class _CustomerLedgerScreenState extends ConsumerState<CustomerLedgerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -75,8 +77,10 @@ class _CustomerLedgerScreenState extends ConsumerState<CustomerLedgerScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.backgroundLight,
-              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              color: colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(color: colorScheme.outlineVariant),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -118,8 +122,8 @@ class _CustomerLedgerScreenState extends ConsumerState<CustomerLedgerScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isSale
-                              ? Colors.white
-                              : const Color(0xFFE8F5E9),
+                              ? colorScheme.surface
+                              : AppColors.success.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSale
@@ -174,9 +178,9 @@ class _CustomerLedgerScreenState extends ConsumerState<CustomerLedgerScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 transaction.note!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.black87,
+                                  color: colorScheme.onSurface.withOpacity(0.8),
                                 ),
                               ),
                             ],
@@ -194,7 +198,7 @@ class _CustomerLedgerScreenState extends ConsumerState<CustomerLedgerScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});

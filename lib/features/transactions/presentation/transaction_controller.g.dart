@@ -27,7 +27,7 @@ final transactionRepositoryProvider =
 typedef TransactionRepositoryRef =
     AutoDisposeProviderRef<SupabaseTransactionRepository>;
 String _$transactionControllerHash() =>
-    r'b9adb4f8ffe320e27c155a364fa224fd7ef2669e';
+    r'3d5bdaf3a584a78aba1214ae6dd9d10c88dad93e';
 
 /// See also [TransactionController].
 @ProviderFor(TransactionController)

@@ -1,9 +1,9 @@
-import 'package:dbms_project/features/cashbook/presentation/cashbook_controller.dart';
-import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
+import 'package:smart_ledger/features/cashbook/presentation/cashbook_controller.dart';
+import 'package:smart_ledger/features/transactions/domain/models/transaction_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class CashbookScreen extends ConsumerStatefulWidget {
@@ -19,6 +19,7 @@ class _CashbookScreenState extends ConsumerState<CashbookScreen> {
   @override
   Widget build(BuildContext context) {
     final stateAsync = ref.watch(cashbookControllerProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -46,10 +47,12 @@ class _CashbookScreenState extends ConsumerState<CashbookScreen> {
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (state) => Column(
           children: [
+            _buildAccountingTools(context),
+
             // Filters
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: AppColors.backgroundLight,
+              color: colorScheme.surface,
               child: Row(
                 children: [
                   _buildFilterChip('All', state.filter),
@@ -135,8 +138,8 @@ class _CashbookScreenState extends ConsumerState<CashbookScreen> {
                             DateFormat(
                               'dd MMM yyyy, hh:mm a',
                             ).format(transaction.date),
-                            style: const TextStyle(
-                              color: AppColors.textSecondaryLight,
+                            style: TextStyle(
+                              color: colorScheme.onSurface.withOpacity(0.65),
                             ),
                           ),
                           trailing: Text(
@@ -167,6 +170,94 @@ class _CashbookScreenState extends ConsumerState<CashbookScreen> {
     );
   }
 
+  Widget _buildAccountingTools(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Accounting Tools',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildAccountingTool(
+                  context,
+                  title: 'Accounts',
+                  icon: Icons.account_tree_outlined,
+                  route: '/accounting/accounts',
+                ),
+                _buildAccountingTool(
+                  context,
+                  title: 'Journal',
+                  icon: Icons.receipt_long_outlined,
+                  route: '/accounting/journal',
+                ),
+                _buildAccountingTool(
+                  context,
+                  title: 'Ledger',
+                  icon: Icons.menu_book_outlined,
+                  route: '/accounting/ledger',
+                ),
+                _buildAccountingTool(
+                  context,
+                  title: 'Trial Balance',
+                  icon: Icons.balance_outlined,
+                  route: '/accounting/trial-balance',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountingTool(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required String route,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: () => context.push(route),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: 112,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: colorScheme.primary),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilterChip(String label, String currentFilter) {
     final isSelected = currentFilter == label;
     return FilterChip(
@@ -177,17 +268,21 @@ class _CashbookScreenState extends ConsumerState<CashbookScreen> {
           ref.read(cashbookControllerProvider.notifier).updateFilter(label);
         }
       },
-      backgroundColor: Colors.white,
-      selectedColor: AppColors.primary.withOpacity(0.2),
-      checkmarkColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+      checkmarkColor: Theme.of(context).colorScheme.primary,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textSecondaryLight,
+        color: isSelected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? AppColors.primary : Colors.grey.shade300,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.outlineVariant,
         ),
       ),
     );

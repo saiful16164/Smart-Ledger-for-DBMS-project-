@@ -1,8 +1,8 @@
-import 'package:dbms_project/features/auth/presentation/auth_controller.dart';
-import 'package:dbms_project/features/settings/presentation/profile_controller.dart';
+import 'package:smart_ledger/features/auth/presentation/auth_controller.dart';
+import 'package:smart_ledger/features/settings/presentation/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -32,14 +32,12 @@ class SettingsScreen extends ConsumerWidget {
     final displayPhone = profile?.phone ?? 'No Phone Number';
     final displayEmail = authEmail ?? 'No Email';
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Light background
-      appBar: AppBar(
-        title: const Text('Settings'),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-      ),
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(title: const Text('Settings'), elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -49,8 +47,9 @@ class SettingsScreen extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: colorScheme.outlineVariant),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -114,13 +113,16 @@ class SettingsScreen extends ConsumerWidget {
                     displayPhone,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: textTheme.bodySmall?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   Text(
                     displayEmail,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: textTheme.bodySmall?.color?.withOpacity(0.75),
+                    ),
                   ),
                 ],
               ),
@@ -129,6 +131,7 @@ class SettingsScreen extends ConsumerWidget {
 
             // General Settings Card
             _buildSettingsCard(
+              context,
               title: 'General',
               children: [
                 SwitchListTile(
@@ -155,6 +158,7 @@ class SettingsScreen extends ConsumerWidget {
 
             // Support Card
             _buildSettingsCard(
+              context,
               title: 'Support',
               children: [
                 _buildListTile(
@@ -211,10 +215,13 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSettingsCard({
+  Widget _buildSettingsCard(
+    BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -222,18 +229,19 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.black54,
+              color: colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.outlineVariant),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.02),

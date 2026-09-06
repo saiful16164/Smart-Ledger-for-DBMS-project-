@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/app.dart';
+import 'package:smart_ledger/app.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dbms_project/core/constants/supabase_constants.dart';
+import 'package:smart_ledger/core/constants/supabase_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

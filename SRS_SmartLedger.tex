@@ -1,0 +1,1225 @@
+\documentclass[journal, a4paper, onecolumn, 12pt]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\title{Software Requirements Specification (SRS) \\ \Large Smart Ledger — Integrated Financial Management Platform}
+\author{\IEEEauthorblockN{Project Team}\\ \IEEEauthorblockA{\textit{Smart Ledger Project} \\ May 11, 2026}}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{Table of Contents}
+1. Introduction
+2. Overall Description
+3. Specific Requirements
+\begin{itemize}[leftmargin=*]
+\item 3.1 Functional Requirements
+\item 3.2 Non-Functional Requirements
+\item 3.3 Use Cases
+\item 3.4 External Interface Requirements
+\item 3.5 Data Requirements
+\item 3.6 Additional Constraints
+\item 3.7 Security Requirements
+\item 3.8 Acceptance Criteria
+\end{itemize}
+4. Appendix
+
+\vspace{1em}\hrule\vspace{1em}
+
+\section{Introduction}
+
+\subsection{Purpose}
+This Software Requirements Specification (SRS) document describes the complete functional and non-functional requirements for \textbf{Smart Ledger}, a cloud-based, cross-platform financial management application. It serves as the formal agreement between stakeholders (clients, developers, testers, and project managers) and defines what the system must do before any implementation decisions are finalized.
+
+\subsection{Scope}
+Smart Ledger is a premium financial management platform targeting small-to-medium enterprises (SMEs) and professional contractors. It replaces fragmented spreadsheets and manual ledger books with a unified, automated system. The platform covers:
+
+\begin{itemize}[leftmargin=*]
+\item User authentication and role-based access
+\item Client and account receivable management
+\item Cashbook and unified ledger (double-entry bookkeeping)
+\item Transaction entry, categorization, and batch upload
+\item Financial reporting (Balance Sheet, P\&L, Cash Flow)
+\item Settings, user management, and system configuration
+\end{itemize}
+
+\textbf{Out of Scope (v1.0):} AI-powered forecasting, blockchain integration, payroll module, intercompany settlement automation.
+
+\subsection{Objectives}
+\begin{itemize}[leftmargin=*]
+\item Reduce manual bookkeeping overhead by 70–80\%
+\item Achieve 99.9\% accuracy in transaction recording
+\item Provide real-time financial dashboards across Web, Android, iOS, and Desktop
+\item Ensure enterprise-grade security (encryption, MFA, RBAC)
+\item Enable month-end close in 1–2 days instead of 5–10 days
+\end{itemize}
+
+\subsection{Definitions and Acronyms}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Term & Definition \\ \hline
+\hline
+SRS & Software Requirements Specification \\ \hline
+SME & Small-to-Medium Enterprise \\ \hline
+RBAC & Role-Based Access Control \\ \hline
+RLS & Row-Level Security (Supabase/PostgreSQL feature) \\ \hline
+MFA & Multi-Factor Authentication \\ \hline
+P\&L & Profit \& Loss Statement \\ \hline
+GAAP & Generally Accepted Accounting Principles \\ \hline
+IFRS & International Financial Reporting Standards \\ \hline
+MRR & Monthly Recurring Revenue \\ \hline
+KPI & Key Performance Indicator \\ \hline
+OCR & Optical Character Recognition \\ \hline
+SSO & Single Sign-On \\ \hline
+TLS & Transport Layer Security \\ \hline
+AES & Advanced Encryption Standard \\ \hline
+JWT & JSON Web Token \\ \hline
+API & Application Programming Interface \\ \hline
+REST & Representational State Transfer \\ \hline
+\end{longtable}
+\subsection{Intended Audience}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Project Team:} Flutter developers, backend engineers, QA testers
+\item \textbf{Stakeholders:} Product owners, enterprise clients, finance managers
+\item \textbf{Testers:} QA engineers validating functional and non-functional requirements
+\item \textbf{Auditors:} Compliance officers verifying regulatory alignment
+\end{itemize}
+
+\subsection{References}
+\begin{itemize}[leftmargin=*]
+\item Smart Ledger Project Proposal v1.0 (`Project\_Proposal.md`)
+\item Flutter SDK Documentation (https://flutter.dev/docs)
+\item Supabase Documentation (https://supabase.com/docs)
+\item GAAP Accounting Standards
+\item IFRS Standards
+\item OWASP Top 10 Security Guidelines
+\item WCAG 2.1 Accessibility Guidelines
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\section{Overall Description}
+
+\subsection{Product Perspective}
+Smart Ledger is a standalone cloud-native SaaS application. It does not replace an entire ERP system but integrates with third-party services (banks, payment gateways, CRMs) via REST APIs. All client data is stored in a Supabase-managed PostgreSQL database with Row-Level Security to ensure full multi-tenant data isolation.
+
+\begin{verbatim}
++-----------------------------------------+
+|              Smart Ledger App            |
+|  (Flutter: Web / Android / iOS / Desktop)|
++----------------+------------------------+
+| HTTPS / WebSocket
++----------------v------------------------+
+|            Supabase Backend              |
+|  +-----------+  +-------------------+   |
+|  | Auth (JWT)|  | PostgreSQL + RLS   |   |
+|  +-----------+  +-------------------+   |
+|  +-----------+  +-------------------+   |
+|  |  Storage  |  |  Realtime (WS)    |   |
+|  +-----------+  +-------------------+   |
++-----------------------------------------+
+\end{verbatim}
+
+\subsection{Product Functions (Summary)}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+\# & Function \\ \hline
+\hline
+F1 & User Registration, Login, MFA \\ \hline
+F2 & Executive Dashboard with KPIs \\ \hline
+F3 & Client \& Account Receivable Management \\ \hline
+F4 & Cashbook \& Double-Entry Ledger \\ \hline
+F5 & Transaction Entry \& Batch Upload \\ \hline
+F6 & Financial Reporting \& Export \\ \hline
+F7 & Settings \& Role/Permission Management \\ \hline
+\end{longtable}
+\subsection{User Classes and Characteristics}
+
+\begin{longtable}{|p{0.32\textwidth}|p{0.32\textwidth}|p{0.32\textwidth}|}
+\hline
+Role & Description & Access Level \\ \hline
+\hline
+\textbf{Administrator} & Full system access; manages users, config, audit logs & Full \\ \hline
+\textbf{Finance Manager} & Access all financial modules; approve transactions & High \\ \hline
+\textbf{Accountant} & Enter transactions, reconcile, generate reports & Medium \\ \hline
+\textbf{Executive/Viewer} & Read-only dashboard and summary reports & Read-only \\ \hline
+\textbf{Client/Vendor} & View own invoices and account balance via portal & Restricted \\ \hline
+\textbf{Department Manager} & View and manage departmental budgets only & Scoped \\ \hline
+\end{longtable}
+\subsection{Operating Environment}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Client Platforms:} Android 10+, iOS 14+, Web (Chrome/Firefox/Edge latest), Windows 10+, macOS 11+
+\item \textbf{Backend:} Supabase (PostgreSQL 15), hosted on cloud (AWS/GCP regions)
+\item \textbf{Framework:} Flutter 3.x (Dart SDK ^3.8.1)
+\item \textbf{State Management:} Riverpod 2.x
+\item \textbf{Navigation:} GoRouter 14.x
+\item \textbf{Internet:} Required for all real-time features; partial offline support on mobile
+\end{itemize}
+
+\subsection{Constraints}
+\begin{itemize}[leftmargin=*]
+\item Must use Flutter as the cross-platform framework
+\item Must use Supabase as the backend-as-a-service
+\item All financial logic must comply with GAAP/IFRS double-entry rules
+\item Passwords must never be stored in plaintext
+\item The system must operate within Supabase free/pro tier limits for the academic phase
+\item Development timeline: Academic semester constraint (approx. 8 weeks)
+\end{itemize}
+
+\subsection{Assumptions and Dependencies}
+\begin{itemize}[leftmargin=*]
+\item Users have a stable internet connection for real-time sync
+\item Supabase services remain available (SLA 99.9\%)
+\item Flutter SDK and Supabase Flutter SDK are actively maintained
+\item Users have basic accounting literacy (understanding of debit/credit)
+\item Organization has valid email addresses for all users
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\section{Specific Requirements}
+\begin{itemize}[leftmargin=*]
+\item 3.1 Functional Requirements
+\end{itemize}
+
+\begin{quote}
+Each requirement is labeled \textbf{FR-[Module]-[Number]} for traceability.
+\end{quote}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsubsection{Authentication Module (FR-AUTH)}
+
+\subsubsection{FR-AUTH-01: User Registration}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Full name, email address, password, organization name
+\item \textbf{Processing:} Validate email format; enforce password strength (min 8 chars, 1 uppercase, 1 number, 1 special character); create user record in `auth.users` via Supabase Auth; create corresponding profile in `public.profiles`
+\item \textbf{Output:} Confirmation email sent; user redirected to onboarding screen
+\item \textbf{Conditions:} Email must be unique in the system
+\end{itemize}
+
+\subsubsection{FR-AUTH-02: User Login}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Email address, password
+\item \textbf{Processing:} Validate credentials via Supabase Auth; generate JWT token; load user role and permissions; initialize session
+\item \textbf{Output:} User redirected to role-appropriate dashboard
+\item \textbf{Conditions:} If credentials are invalid, display error "Invalid email or password." Lock account after 5 consecutive failures for 15 minutes
+\end{itemize}
+
+\subsubsection{FR-AUTH-03: Multi-Factor Authentication (MFA)}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} TOTP code from authenticator app (Google Authenticator / Authy)
+\item \textbf{Processing:} Verify TOTP against stored secret; extend session on success
+\item \textbf{Output:} Session fully authenticated; access granted
+\item \textbf{Conditions:} MFA is optional during beta; admin can enforce MFA org-wide
+\end{itemize}
+
+\subsubsection{FR-AUTH-04: Password Reset}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Registered email address
+\item \textbf{Processing:} Send password reset link via Supabase Auth email; link expires in 60 minutes
+\item \textbf{Output:} User can set a new password; old sessions invalidated
+\item \textbf{Conditions:} Link is single-use
+\end{itemize}
+
+\subsubsection{FR-AUTH-05: Session Management}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} User activity / inactivity
+\item \textbf{Processing:} Auto-logout after 30 minutes of inactivity; refresh JWT token on active use
+\item \textbf{Output:} Session terminated; user redirected to login page with notification
+\item \textbf{Conditions:} User is warned 2 minutes before auto-logout
+\end{itemize}
+
+\subsubsection{FR-AUTH-06: Logout}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} User clicks "Logout"
+\item \textbf{Processing:} Invalidate JWT token via Supabase Auth sign-out; clear local session state
+\item \textbf{Output:} User redirected to login screen; all cached data cleared
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsubsection{Dashboard Module (FR-DASH)}
+
+\subsubsection{FR-DASH-01: KPI Overview Widgets}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Authenticated user session, selected date range
+\item \textbf{Processing:} Query aggregated financial data (net revenue, total expenses, cash on hand, outstanding receivables); compute KPIs in real-time
+\item \textbf{Output:} Display widgets: Net Revenue, Total Expenses, Cash Balance, Receivables, Payables
+\item \textbf{Conditions:} Data refreshes every 60 seconds or on WebSocket push event
+\end{itemize}
+
+\subsubsection{FR-DASH-02: Revenue vs. Expense Trend Chart}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date range filter (default: current month)
+\item \textbf{Processing:} Aggregate daily/weekly/monthly transaction data grouped by type (income/expense); format for fl\_chart line/bar chart
+\item \textbf{Output:} Interactive line chart showing revenue and expense trends
+\item \textbf{Conditions:} Chart must render within 2 seconds; supports zoom/pan
+\end{itemize}
+
+\subsubsection{FR-DASH-03: Recent Transactions Feed}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Authenticated session
+\item \textbf{Processing:} Fetch last 10 transactions sorted by date descending
+\item \textbf{Output:} Scrollable list showing: date, description, amount, category, status
+\item \textbf{Conditions:} Clicking a transaction opens the transaction detail screen
+\end{itemize}
+
+\subsubsection{FR-DASH-04: Alerts \& Notifications}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} System event triggers (negative cash balance, overdue invoice, budget breach)
+\item \textbf{Processing:} Evaluate alert conditions on data update; push notification to user
+\item \textbf{Output:} In-app notification banner and notification center entry
+\item \textbf{Conditions:} Each alert type can be enabled/disabled per user preference
+\end{itemize}
+
+\subsubsection{FR-DASH-05: Dashboard Customization}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} User drag-and-drop or toggle widget visibility
+\item \textbf{Processing:} Save widget layout preferences to `public.user\_preferences` table
+\item \textbf{Output:} Customized dashboard layout persists across sessions and devices
+\item \textbf{Conditions:} Minimum 2 widgets must remain visible at all times
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsubsection{Client \& Account Receivable Management (FR-CL)}
+
+\subsubsection{FR-CL-01: Add New Client}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Client name, email, phone, address, tax ID, payment terms, credit limit, currency
+\item \textbf{Processing:} Validate required fields; check for duplicate email/tax ID within organization; insert record into `public.clients`
+\item \textbf{Output:} Client profile created; appears in client list
+\item \textbf{Conditions:} Client name and email are mandatory
+\end{itemize}
+
+\subsubsection{FR-CL-02: Edit Client Profile}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Updated client fields
+\item \textbf{Processing:} Validate changes; update `public.clients` record; log change in audit trail
+\item \textbf{Output:} Updated client profile saved; success toast shown
+\item \textbf{Conditions:} Only Accountant role and above can edit clients
+\end{itemize}
+
+\subsubsection{FR-CL-03: View Client Outstanding Balance}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Selected client
+\item \textbf{Processing:} Sum all unpaid invoices and credits for client; compute aging schedule (0–30, 31–60, 61–90, 90+ days)
+\item \textbf{Output:} Balance summary card + aging schedule table
+\item \textbf{Conditions:} Balance updates in real-time when new transactions are posted
+\end{itemize}
+
+\subsubsection{FR-CL-04: Generate Invoice}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Client ID, line items (description, quantity, unit price), due date, tax rate
+\item \textbf{Processing:} Calculate subtotal, tax, and total; assign invoice number (auto-incremented); insert into `public.invoices` and `public.invoice\_items`
+\item \textbf{Output:} Formatted PDF invoice generated; option to email directly to client
+\item \textbf{Conditions:} Invoice number format: `INV-YYYY-XXXXXX`
+\end{itemize}
+
+\subsubsection{FR-CL-05: Track Invoice Status}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Invoice ID
+\item \textbf{Processing:} Check payment records against invoice amount; update status (Draft → Sent → Partial → Paid → Overdue)
+\item \textbf{Output:} Invoice status badge updated; overdue invoices trigger alert
+\item \textbf{Conditions:} Status "Overdue" triggered automatically when due date passes and balance > 0
+\end{itemize}
+
+\subsubsection{FR-CL-06: Delete Client}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Client ID, admin confirmation
+\item \textbf{Processing:} Soft-delete client (set `is\_active = false`); retain all historical transactions and invoices for audit
+\item \textbf{Output:} Client removed from active list; data preserved
+\item \textbf{Conditions:} Only Administrator can delete clients; cannot delete clients with unpaid invoices
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsubsection{Cashbook Module (FR-CB)}
+
+\subsubsection{FR-CB-01: View Cashbook}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date range filter, account filter
+\item \textbf{Processing:} Fetch all cash receipts and payments in selected range; calculate running balance after each entry
+\item \textbf{Output:} Tabular view with columns: Date, Reference, Description, Debit, Credit, Balance
+\item \textbf{Conditions:} Sorted by date ascending; supports pagination (50 rows per page)
+\end{itemize}
+
+\subsubsection{FR-CB-02: Add Cash Receipt}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date, reference number, description, amount, category, client/source
+\item \textbf{Processing:} Validate amount > 0; insert debit entry into `public.cashbook\_entries`; auto-post corresponding credit to ledger account
+\item \textbf{Output:} Entry appears in cashbook; running balance updated
+\item \textbf{Conditions:} Cannot post to a closed accounting period
+\end{itemize}
+
+\subsubsection{FR-CB-03: Add Cash Payment}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date, reference number, description, amount, category, payee/vendor
+\item \textbf{Processing:} Validate amount > 0 and sufficient balance; insert credit entry; auto-post debit to appropriate expense account
+\item \textbf{Output:} Entry in cashbook; balance reduced
+\item \textbf{Conditions:} Warning shown if payment causes cash balance to go negative
+\end{itemize}
+
+\subsubsection{FR-CB-04: Edit Cashbook Entry}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Entry ID, updated fields
+\item \textbf{Processing:} Create reversal entry for original; post corrected entry; log both in audit trail
+\item \textbf{Output:} Cashbook reflects correction; audit trail shows original and revised entries
+\item \textbf{Conditions:} Only Finance Manager and above can edit posted entries
+\end{itemize}
+
+\subsubsection{FR-CB-05: Delete/Void Cashbook Entry}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Entry ID, reason for void
+\item \textbf{Processing:} Mark entry as `voided`; create reversal posting; log void reason and user
+\item \textbf{Output:} Entry marked voided (not deleted); ledger balance corrected
+\item \textbf{Conditions:} Voiding requires Finance Manager approval; physical deletion is not permitted
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsubsection{Ledger Module (FR-LG)}
+
+\subsubsection{FR-LG-01: View General Ledger}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Account filter, date range
+\item \textbf{Processing:} Fetch all journal entries for selected accounts in range; compute account balance
+\item \textbf{Output:} Ledger view: Date, Journal Ref, Description, Debit, Credit, Running Balance per account
+\item \textbf{Conditions:} Opening balance shown at top of each account section
+\end{itemize}
+
+\subsubsection{FR-LG-02: Create Manual Journal Entry}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date, journal reference, description, debit lines (account, amount), credit lines (account, amount)
+\item \textbf{Processing:} Validate total debits == total credits (balanced entry); insert into `public.journal\_entries` and `public.journal\_lines`; update account balances
+\item \textbf{Output:} Journal entry posted; ledger accounts updated
+\item \textbf{Conditions:} Unbalanced entries are rejected with error: "Debits must equal credits"
+\end{itemize}
+
+\subsubsection{FR-LG-03: Chart of Accounts Management}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Account name, account type (Asset/Liability/Equity/Revenue/Expense), account code, parent account
+\item \textbf{Processing:} Validate unique account code; insert into `public.accounts`; support hierarchical structure
+\item \textbf{Output:} New account appears in chart of accounts; available for journal entries
+\item \textbf{Conditions:} Only Administrator can create/delete accounts
+\end{itemize}
+
+\subsubsection{FR-LG-04: Account Balance Summary}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} As-of date
+\item \textbf{Processing:} Compute closing balance for all accounts as of selected date
+\item \textbf{Output:} Trial balance report: Account | Debit Balance | Credit Balance
+\item \textbf{Conditions:} Total debits must equal total credits; imbalance flagged as system error
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsubsection{Transactions Module (FR-TX)}
+
+\subsubsection{FR-TX-01: Add Single Transaction}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date, type (Income/Expense/Transfer), amount, category, description, client/vendor, payment method, attachment
+\item \textbf{Processing:} Validate all required fields; classify category; insert into `public.transactions`; propagate to cashbook and ledger
+\item \textbf{Output:} Transaction recorded; dashboard KPIs updated
+\item \textbf{Conditions:} Amount must be > 0; date cannot be in the future unless it is a scheduled transaction
+\end{itemize}
+
+\subsubsection{FR-TX-02: Batch Import Transactions}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} CSV/Excel file upload
+\item \textbf{Processing:} Parse file; validate each row (required fields, data types, duplicates); preview rows with errors highlighted; on confirm, insert valid rows; log rejected rows
+\item \textbf{Output:} Import summary: X records imported, Y records failed; downloadable error report
+\item \textbf{Conditions:} Max file size 10 MB; max 5,000 rows per import
+\end{itemize}
+
+\subsubsection{FR-TX-03: Edit Transaction}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Transaction ID, updated fields
+\item \textbf{Processing:} Check user permission; update record; create audit log entry; propagate changes to cashbook and ledger
+\item \textbf{Output:} Transaction updated; audit trail records who changed what and when
+\item \textbf{Conditions:} Posted transactions require Finance Manager approval to edit
+\end{itemize}
+
+\subsubsection{FR-TX-04: Delete/Void Transaction}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Transaction ID, void reason
+\item \textbf{Processing:} Soft-delete; create reversal posting; notify relevant users
+\item \textbf{Output:} Transaction voided; balances corrected
+\item \textbf{Conditions:} Administrator only; irreversible physical deletion not permitted
+\end{itemize}
+
+\subsubsection{FR-TX-05: Filter \& Search Transactions}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Search term, filters (date range, category, amount range, status, client/vendor)
+\item \textbf{Processing:} Query `public.transactions` with applied filters; rank by relevance
+\item \textbf{Output:} Filtered transaction list; result count displayed
+\item \textbf{Conditions:} Response time < 1 second for up to 100,000 records with proper indexing
+\end{itemize}
+
+\subsubsection{FR-TX-06: Transaction Categorization}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Transaction description and amount
+\item \textbf{Processing:} Match against category rules; suggest most likely category based on history patterns
+\item \textbf{Output:} Pre-filled category field; user can override
+\item \textbf{Conditions:} Suggestion accuracy target ≥ 80\% after 50+ historical transactions
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{Reports Module (FR-RP)}
+
+\subsubsection{FR-RP-01: Profit \& Loss Statement}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date range, comparison period (optional)
+\item \textbf{Processing:} Aggregate revenue and expense accounts; compute gross profit, operating profit, net profit; optionally compare with prior period
+\item \textbf{Output:} Formatted P\&L report with section totals and variance percentages
+\item \textbf{Conditions:} Generated within 5 seconds for up to 1M transactions
+\end{itemize}
+
+\subsubsection{FR-RP-02: Balance Sheet}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} As-of date
+\item \textbf{Processing:} Compute total assets, liabilities, and equity as of selected date; verify Assets = Liabilities + Equity
+\item \textbf{Output:} Standard balance sheet format compliant with GAAP/IFRS
+\item \textbf{Conditions:} Any imbalance flagged as a critical error requiring admin review
+\end{itemize}
+
+\subsubsection{FR-RP-03: Cash Flow Statement}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date range
+\item \textbf{Processing:} Categorize cash movements into Operating, Investing, Financing activities; compute net cash change
+\item \textbf{Output:} Cash flow statement with opening and closing cash balances
+\item \textbf{Conditions:} Must reconcile with cashbook closing balance
+\end{itemize}
+
+\subsubsection{FR-RP-04: Accounts Receivable Aging Report}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} As-of date
+\item \textbf{Processing:} Group outstanding invoices by age bucket: Current, 1–30, 31–60, 61–90, 90+ days
+\item \textbf{Output:} Aging table per client with total outstanding
+\item \textbf{Conditions:} Highlights clients with 90+ day overdue amounts in red
+\end{itemize}
+
+\subsubsection{FR-RP-05: Export Reports}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Report type, format (PDF/Excel/CSV)
+\item \textbf{Processing:} Render report data; format per selected type; generate download link
+\item \textbf{Output:} Downloadable file delivered to user
+\item \textbf{Conditions:} PDF exports include company logo and formatted headers; Excel exports include raw data and formulas
+\end{itemize}
+
+\subsubsection{FR-RP-06: Scheduled Reports}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Report type, schedule (daily/weekly/monthly), recipient email list
+\item \textbf{Processing:} Generate report on schedule; email to recipients; log delivery
+\item \textbf{Output:} Report delivered to configured recipients on time
+\item \textbf{Conditions:} Failed deliveries retry 3 times; admin notified on persistent failure
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{Settings Module (FR-ST)}
+
+\subsubsection{FR-ST-01: User Management}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} User email, assigned role, department
+\item \textbf{Processing:} Send invitation email; create pending user record; on acceptance, activate account with assigned role
+\item \textbf{Output:} New user can log in with configured permissions
+\item \textbf{Conditions:} Only Administrator can invite and manage users
+\end{itemize}
+
+\subsubsection{FR-ST-02: Role \& Permission Management}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Role name, permission toggles per module
+\item \textbf{Processing:} Save custom role definition to `public.roles`; apply to all assigned users
+\item \textbf{Output:} Users with the role immediately reflect updated permissions
+\item \textbf{Conditions:} System roles (Administrator, Accountant, Viewer) cannot be deleted
+\end{itemize}
+
+\subsubsection{FR-ST-03: Organization Profile}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Company name, logo, address, fiscal year start, accounting method (cash/accrual), base currency
+\item \textbf{Processing:} Validate required fields; update `public.organizations`
+\item \textbf{Output:} Organization settings saved; reflected across all reports
+\item \textbf{Conditions:} Changing fiscal year start requires Finance Manager approval
+\end{itemize}
+
+\subsubsection{FR-ST-04: Audit Log View}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Input:} Date range, user filter, action type filter
+\item \textbf{Processing:} Fetch from `public.audit\_logs`; display chronologically
+\item \textbf{Output:} Paginated audit log: Timestamp, User, Action, Affected Record, Old Value, New Value
+\item \textbf{Conditions:} Audit logs are read-only; cannot be edited or deleted; retained for 7 years
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\section{    - 3.2 Non-Functional Requirements}
+
+\subsection{Performance}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Requirement & Specification \\ \hline
+\hline
+\textbf{NFR-PERF-01} & Dashboard KPI widgets must load within \textbf{2 seconds} for up to 1 million transaction records \\ \hline
+\textbf{NFR-PERF-02} & Any single transaction insert must complete within \textbf{100 milliseconds} \\ \hline
+\textbf{NFR-PERF-03} & Report generation (P\&L, Balance Sheet) must complete within \textbf{5 seconds} \\ \hline
+\textbf{NFR-PERF-04} & Search/filter queries must return results within \textbf{1 second} \\ \hline
+\textbf{NFR-PERF-05} & Batch import of 5,000 rows must complete within \textbf{30 seconds} \\ \hline
+\textbf{NFR-PERF-06} & App cold start time must be < \textbf{3 seconds} on mid-range devices \\ \hline
+\end{longtable}
+\subsection{Scalability}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Requirement & Specification \\ \hline
+\hline
+\textbf{NFR-SCALE-01} & System must support \textbf{10,000+ concurrent users} without performance degradation \\ \hline
+\textbf{NFR-SCALE-02} & Database must handle \textbf{100 million+ transaction rows} per organization \\ \hline
+\textbf{NFR-SCALE-03} & Infrastructure must auto-scale horizontally during peak load \\ \hline
+\textbf{NFR-SCALE-04} & Multi-tenancy architecture must support \textbf{1,000+ organizations} on shared infrastructure \\ \hline
+\end{longtable}
+\subsection{Reliability \& Availability}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Requirement & Specification \\ \hline
+\hline
+\textbf{NFR-REL-01} & System uptime SLA: \textbf{99.99\%} (< 52 minutes downtime per year) \\ \hline
+\textbf{NFR-REL-02} & Recovery Time Objective (RTO): \textbf{< 1 hour} after catastrophic failure \\ \hline
+\textbf{NFR-REL-03} & Recovery Point Objective (RPO): \textbf{< 15 minutes} data loss in worst case \\ \hline
+\textbf{NFR-REL-04} & Automated daily backups with \textbf{90-day point-in-time recovery} \\ \hline
+\end{longtable}
+\subsection{Usability}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Requirement & Specification \\ \hline
+\hline
+\textbf{NFR-USE-01} & New users must be able to complete core tasks (add transaction, generate report) within \textbf{10 minutes} of first login without training \\ \hline
+\textbf{NFR-USE-02} & All UI must comply with \textbf{WCAG 2.1 Level AA} accessibility standards \\ \hline
+\textbf{NFR-USE-03} & Application must support \textbf{responsive layout} across screen sizes from 320px to 4K \\ \hline
+\textbf{NFR-USE-04} & All error messages must be human-readable with actionable guidance \\ \hline
+\textbf{NFR-USE-05} & App must support \textbf{dark mode} and \textbf{light mode} \\ \hline
+\end{longtable}
+\subsection{Maintainability}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Requirement & Specification \\ \hline
+\hline
+\textbf{NFR-MAINT-01} & Codebase follows Flutter/Dart best practices with feature-first folder structure \\ \hline
+\textbf{NFR-MAINT-02} & All public APIs and complex business logic must have inline documentation \\ \hline
+\textbf{NFR-MAINT-03} & Unit test coverage must be ≥ \textbf{70\%} for business logic \\ \hline
+\textbf{NFR-MAINT-04} & CI/CD pipeline must run automated tests on every pull request \\ \hline
+\end{longtable}
+\subsection{Compatibility}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Requirement & Specification \\ \hline
+\hline
+\textbf{NFR-COMP-01} & Android: version \textbf{10 (API 29)} and above \\ \hline
+\textbf{NFR-COMP-02} & iOS: version \textbf{14} and above \\ \hline
+\textbf{NFR-COMP-03} & Web: latest two versions of Chrome, Firefox, Edge, Safari \\ \hline
+\textbf{NFR-COMP-04} & Desktop: Windows 10+, macOS 11+ \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\section{    - 3.3 Use Cases}
+
+\subsection{UC-01: User Login}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Field & Detail \\ \hline
+\hline
+\textbf{Actor} & Any registered user \\ \hline
+\textbf{Precondition} & User has a registered account \\ \hline
+\textbf{Main Flow} & 1. User opens the app → 2. Enters email and password → 3. Taps "Login" → 4. System validates credentials via Supabase Auth → 5. JWT issued → 6. User redirected to dashboard \\ \hline
+\textbf{Alternative Flow} & If MFA is enabled: After step 4, user enters TOTP code → validated → dashboard shown \\ \hline
+\textbf{Exception Flow} & Invalid credentials: error shown; 5th failure: account locked 15 min \\ \hline
+\textbf{Postcondition} & Authenticated session established; user on dashboard \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{UC-02: Add New Transaction}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Field & Detail \\ \hline
+\hline
+\textbf{Actor} & Accountant, Finance Manager, Administrator \\ \hline
+\textbf{Precondition} & User is authenticated; chart of accounts configured \\ \hline
+\textbf{Main Flow} & 1. Navigate to Transactions → 2. Tap "Add Transaction" → 3. Fill form (date, type, amount, category, description) → 4. Tap "Save" → 5. System validates and inserts record → 6. Dashboard updates \\ \hline
+\textbf{Alternative Flow} & Attach receipt: User taps attachment icon → selects image → OCR extracts data → pre-fills form \\ \hline
+\textbf{Exception Flow} & Amount = 0: rejected with validation error; closed period: blocked with message \\ \hline
+\textbf{Postcondition} & Transaction saved; cashbook and ledger updated; KPIs refreshed \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{UC-03: Generate P\&L Report}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Field & Detail \\ \hline
+\hline
+\textbf{Actor} & Accountant, Finance Manager, Executive, Administrator \\ \hline
+\textbf{Precondition} & Transactions exist for selected period \\ \hline
+\textbf{Main Flow} & 1. Navigate to Reports → 2. Select "Profit \& Loss" → 3. Set date range → 4. Tap "Generate" → 5. System aggregates data → 6. Report displayed on screen \\ \hline
+\textbf{Alternative Flow} & Export: Tap "Export" → select format (PDF/Excel/CSV) → file downloaded \\ \hline
+\textbf{Exception Flow} & No data for period: message "No transactions found for the selected period" \\ \hline
+\textbf{Postcondition} & P\&L report displayed/downloaded; data unchanged \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{UC-04: Create Invoice for Client}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Field & Detail \\ \hline
+\hline
+\textbf{Actor} & Accountant, Finance Manager, Administrator \\ \hline
+\textbf{Precondition} & Client record exists \\ \hline
+\textbf{Main Flow} & 1. Navigate to Clients → 2. Select client → 3. Tap "New Invoice" → 4. Add line items → 5. Set due date → 6. Tap "Generate" → 7. Invoice PDF created → 8. Option to email client \\ \hline
+\textbf{Alternative Flow} & Save as draft: Tap "Save Draft" → invoice saved with status "Draft" \\ \hline
+\textbf{Exception Flow} & Client email not set: warning shown; send option disabled \\ \hline
+\textbf{Postcondition} & Invoice created; receivable balance updated; client notified (if emailed) \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{UC-05: Invite New User}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Field & Detail \\ \hline
+\hline
+\textbf{Actor} & Administrator \\ \hline
+\textbf{Precondition} & Admin is logged in; user does not already exist \\ \hline
+\textbf{Main Flow} & 1. Navigate to Settings → Users → 2. Tap "Invite User" → 3. Enter email and assign role → 4. Tap "Send Invite" → 5. System sends invitation email → 6. User accepts and sets password \\ \hline
+\textbf{Alternative Flow} & Resend invite: If user has not accepted in 48h, admin can resend \\ \hline
+\textbf{Exception Flow} & Email already registered: error "User with this email already exists" \\ \hline
+\textbf{Postcondition} & New user account active with configured role and permissions \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\subsection{UC-06: Perform Month-End Close}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Field & Detail \\ \hline
+\hline
+\textbf{Actor} & Finance Manager \\ \hline
+\textbf{Precondition} & All transactions for the month are posted and reconciled \\ \hline
+\textbf{Main Flow} & 1. Navigate to Ledger → Accounting Periods → 2. Select current month → 3. Run "Pre-Close Checklist" → 4. Resolve any flagged items → 5. Tap "Close Period" → 6. System locks period from further edits \\ \hline
+\textbf{Alternative Flow} & Reopen period: Administrator can reopen a closed period with documented reason \\ \hline
+\textbf{Exception Flow} & Unreconciled items found: checklist shows warnings; close blocked until resolved \\ \hline
+\textbf{Postcondition} & Period locked; all reports for the month finalized and immutable \\ \hline
+\end{longtable}
+\subsection{Sections 6–11}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\section{    - 3.4 External Interface Requirements}
+
+\subsection{User Interface Requirements}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Requirement & Detail \\ \hline
+\hline
+\textbf{UI-01} & The app uses Flutter Material Design 3 with a custom dark-mode-first theme \\ \hline
+\textbf{UI-02} & Primary font: Google Fonts (Inter/Roboto); minimum body text size 14sp \\ \hline
+\textbf{UI-03} & Color contrast ratio ≥ 4.5:1 for all text elements (WCAG AA) \\ \hline
+\textbf{UI-04} & All interactive elements must have a minimum touch target of 48×48dp \\ \hline
+\textbf{UI-05} & Navigation: Bottom navigation bar on mobile; side rail on tablet/desktop \\ \hline
+\textbf{UI-06} & Loading states shown with skeleton loaders (not spinner-only) \\ \hline
+\textbf{UI-07} & All forms must show inline validation errors on field blur \\ \hline
+\textbf{UI-08} & Empty states must show illustrative icons and actionable guidance text \\ \hline
+\textbf{UI-09} & All destructive actions require a confirmation dialog \\ \hline
+\textbf{UI-10} & App must support both portrait and landscape orientations on mobile \\ \hline
+\end{longtable}
+\subsubsection{Hardware Interfaces}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Camera:} Used for receipt scanning (OCR) on mobile devices
+\item \textbf{Biometric Sensor:} Fingerprint/Face ID for biometric authentication (optional)
+\item \textbf{Storage:} Local cache stored in device secure storage (shared\_preferences)
+\item \textbf{Network:} Requires minimum 2G connection for basic operations; 4G recommended for file uploads
+\end{itemize}
+
+\subsubsection{Software Interfaces}
+
+\begin{longtable}{|p{0.32\textwidth}|p{0.32\textwidth}|p{0.32\textwidth}|}
+\hline
+System & Interface Type & Purpose \\ \hline
+\hline
+\textbf{Supabase Auth} & REST API / Dart SDK & User authentication, JWT management, MFA \\ \hline
+\textbf{Supabase Database} & PostgreSQL + PostgREST & All data storage and querying \\ \hline
+\textbf{Supabase Realtime} & WebSocket & Live data sync across devices \\ \hline
+\textbf{Supabase Storage} & REST API & Receipt image and document storage \\ \hline
+\textbf{Google Fonts} & CDN / Flutter package & Typography \\ \hline
+\textbf{fl\_chart} & Flutter package & Dashboard charts and visualizations \\ \hline
+\textbf{go\_router} & Flutter package & In-app navigation and deep linking \\ \hline
+\textbf{Riverpod} & Flutter package & State management \\ \hline
+\end{longtable}
+\subsubsection{Communication Interfaces}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Protocol & Usage \\ \hline
+\hline
+\textbf{HTTPS (TLS 1.3)} & All API calls between client and Supabase backend \\ \hline
+\textbf{WebSocket (WSS)} & Real-time data synchronization (Supabase Realtime) \\ \hline
+\textbf{SMTP} & Transactional emails (invoice delivery, password reset, scheduled reports) — via Supabase/SendGrid \\ \hline
+\end{longtable}
+\subsubsection{API Interfaces}
+\begin{itemize}[leftmargin=*]
+\item \textbf{Stripe API:} Payment processing for invoice collection
+\item \textbf{Open Banking API:} Automated bank feed import
+\item \textbf{REST Webhooks:} Outbound event notifications to third-party systems
+\end{itemize}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\section{    - 3.5 Data Requirements}
+
+\subsubsection{Core Database Schema}
+
+\subsubsection{Table: `public.organizations`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK, DEFAULT gen\_random\_uuid() & Unique organization ID \\ \hline
+`name` & TEXT & NOT NULL & Company name \\ \hline
+`logo\_url` & TEXT & NULLABLE & Logo image URL \\ \hline
+`address` & TEXT & NULLABLE & Registered address \\ \hline
+`base\_currency` & VARCHAR(3) & NOT NULL, DEFAULT 'USD' & ISO 4217 currency code \\ \hline
+`fiscal\_year\_start` & DATE & NOT NULL & Start of fiscal year \\ \hline
+`accounting\_method` & VARCHAR(10) & CHECK IN ('cash','accrual') & Accounting basis \\ \hline
+`created\_at` & TIMESTAMPTZ & DEFAULT now() & Record creation time \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.profiles`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK, FK → auth.users(id) & Matches Supabase Auth user ID \\ \hline
+`organization\_id` & UUID & FK → organizations(id) & Owning organization \\ \hline
+`full\_name` & TEXT & NOT NULL & User's full name \\ \hline
+`role` & VARCHAR(30) & NOT NULL & Assigned role \\ \hline
+`is\_active` & BOOLEAN & DEFAULT true & Account active status \\ \hline
+`created\_at` & TIMESTAMPTZ & DEFAULT now() & Profile creation time \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.accounts` (Chart of Accounts)}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK & Account ID \\ \hline
+`organization\_id` & UUID & FK → organizations(id) & Owning org \\ \hline
+`code` & VARCHAR(20) & NOT NULL, UNIQUE per org & Account code \\ \hline
+`name` & TEXT & NOT NULL & Account name \\ \hline
+`type` & VARCHAR(20) & CHECK IN ('asset','liability','equity','revenue','expense') & Account type \\ \hline
+`parent\_id` & UUID & FK → accounts(id), NULLABLE & Parent account for hierarchy \\ \hline
+`is\_active` & BOOLEAN & DEFAULT true & Active flag \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.clients`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK & Client ID \\ \hline
+`organization\_id` & UUID & FK → organizations(id) & Owning org \\ \hline
+`name` & TEXT & NOT NULL & Client/company name \\ \hline
+`email` & TEXT & NULLABLE & Contact email \\ \hline
+`phone` & TEXT & NULLABLE & Contact phone \\ \hline
+`address` & TEXT & NULLABLE & Client address \\ \hline
+`tax\_id` & TEXT & NULLABLE & Tax identification number \\ \hline
+`credit\_limit` & DECIMAL(18,2) & DEFAULT 0 & Credit limit \\ \hline
+`currency` & VARCHAR(3) & DEFAULT 'USD' & Client's preferred currency \\ \hline
+`is\_active` & BOOLEAN & DEFAULT true & Soft-delete flag \\ \hline
+`created\_at` & TIMESTAMPTZ & DEFAULT now() & Created timestamp \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.transactions`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK & Transaction ID \\ \hline
+`organization\_id` & UUID & FK → organizations(id) & Owning org \\ \hline
+`date` & DATE & NOT NULL & Transaction date \\ \hline
+`type` & VARCHAR(10) & CHECK IN ('income','expense','transfer') & Transaction type \\ \hline
+`amount` & DECIMAL(18,2) & NOT NULL, CHECK > 0 & Transaction amount \\ \hline
+`currency` & VARCHAR(3) & NOT NULL & Currency code \\ \hline
+`category\_id` & UUID & FK → categories(id) & Transaction category \\ \hline
+`description` & TEXT & NULLABLE & Transaction description \\ \hline
+`client\_id` & UUID & FK → clients(id), NULLABLE & Related client \\ \hline
+`status` & VARCHAR(15) & DEFAULT 'posted' & Transaction status \\ \hline
+`created\_by` & UUID & FK → profiles(id) & Creator user ID \\ \hline
+`created\_at` & TIMESTAMPTZ & DEFAULT now() & Record timestamp \\ \hline
+`is\_voided` & BOOLEAN & DEFAULT false & Void flag \\ \hline
+`void\_reason` & TEXT & NULLABLE & Reason for void \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.journal\_entries`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK & Journal entry ID \\ \hline
+`organization\_id` & UUID & FK → organizations(id) & Owning org \\ \hline
+`reference` & TEXT & NOT NULL & Journal reference number \\ \hline
+`date` & DATE & NOT NULL & Entry date \\ \hline
+`description` & TEXT & NULLABLE & Entry description \\ \hline
+`is\_balanced` & BOOLEAN & COMPUTED & Debits == Credits check \\ \hline
+`created\_by` & UUID & FK → profiles(id) & Creator \\ \hline
+`created\_at` & TIMESTAMPTZ & DEFAULT now() & Timestamp \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.journal\_lines`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK & Line ID \\ \hline
+`journal\_entry\_id` & UUID & FK → journal\_entries(id) & Parent entry \\ \hline
+`account\_id` & UUID & FK → accounts(id) & Affected account \\ \hline
+`debit` & DECIMAL(18,2) & DEFAULT 0 & Debit amount \\ \hline
+`credit` & DECIMAL(18,2) & DEFAULT 0 & Credit amount \\ \hline
+`description` & TEXT & NULLABLE & Line description \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.invoices`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK & Invoice ID \\ \hline
+`organization\_id` & UUID & FK → organizations(id) & Owning org \\ \hline
+`invoice\_number` & TEXT & NOT NULL, UNIQUE & Format: INV-YYYY-XXXXXX \\ \hline
+`client\_id` & UUID & FK → clients(id) & Billed client \\ \hline
+`issue\_date` & DATE & NOT NULL & Issue date \\ \hline
+`due\_date` & DATE & NOT NULL & Payment due date \\ \hline
+`subtotal` & DECIMAL(18,2) & NOT NULL & Before tax \\ \hline
+`tax\_amount` & DECIMAL(18,2) & DEFAULT 0 & Tax amount \\ \hline
+`total` & DECIMAL(18,2) & NOT NULL & Total due \\ \hline
+`status` & VARCHAR(15) & DEFAULT 'draft' & Draft/Sent/Paid/Overdue \\ \hline
+`notes` & TEXT & NULLABLE & Invoice notes \\ \hline
+`created\_at` & TIMESTAMPTZ & DEFAULT now() & Creation time \\ \hline
+\end{longtable}
+\subsubsection{Table: `public.audit\_logs`}
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Column & Type & Constraints & Description \\ \hline
+\hline
+`id` & UUID & PK & Log ID \\ \hline
+`organization\_id` & UUID & FK → organizations(id) & Owning org \\ \hline
+`user\_id` & UUID & FK → profiles(id) & Acting user \\ \hline
+`action` & TEXT & NOT NULL & CREATE/UPDATE/DELETE/VOID \\ \hline
+`table\_name` & TEXT & NOT NULL & Affected table \\ \hline
+`record\_id` & UUID & NOT NULL & Affected record \\ \hline
+`old\_value` & JSONB & NULLABLE & Previous state \\ \hline
+`new\_value` & JSONB & NULLABLE & New state \\ \hline
+`timestamp` & TIMESTAMPTZ & DEFAULT now() & Event time \\ \hline
+\end{longtable}
+\subsection{Data Validation Rules}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Field & Validation Rule \\ \hline
+\hline
+Email & Must match RFC 5322 email format \\ \hline
+Amount & Must be a positive decimal; max 16 digits before decimal, 2 after \\ \hline
+Currency & Must be a valid ISO 4217 3-letter code \\ \hline
+Date & Must be a valid calendar date; transaction date cannot be more than 1 year in the future \\ \hline
+Password & Min 8 chars; at least 1 uppercase, 1 number, 1 special character \\ \hline
+Account Code & Alphanumeric; max 20 characters; unique per organization \\ \hline
+Phone & Optional; if provided, must match E.164 format \\ \hline
+\end{longtable}
+\subsection{Data Retention Policy}
+\begin{itemize}[leftmargin=*]
+\item Transaction records: \textbf{Retained permanently} (required for accounting compliance)
+\item Audit logs: \textbf{Retained for 7 years} (SOX compliance)
+\item Voided/deleted records: \textbf{Soft-deleted only}; physical deletion not permitted
+\item User session tokens: \textbf{Expire after 30 minutes of inactivity}
+\item Backup data: \textbf{90-day point-in-time recovery window}
+\end{itemize}
+
+\subsection{ER Diagram (Simplified)}
+
+\begin{verbatim}
+organizations --< profiles
+organizations --< accounts --< journal_lines >-- journal_entries
+organizations --< clients  --< invoices
+organizations --< transactions >-- categories
+transactions --> audit_logs
+journal_entries --> audit_logs
+\end{verbatim}
+
+\vspace{1em}\hrule\vspace{1em}
+
+\section{    - 3.6 Additional Constraints}
+
+\subsubsection{Technical Constraints}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Constraint \\ \hline
+\hline
+CON-01 & The frontend \textbf{must} be built with Flutter (Dart SDK ^3.8.1) \\ \hline
+CON-02 & The backend \textbf{must} use Supabase (PostgreSQL + Auth + Storage + Realtime) \\ \hline
+CON-03 & State management \textbf{must} use flutter\_riverpod v2.x \\ \hline
+CON-04 & Navigation \textbf{must} use go\_router v14.x \\ \hline
+CON-05 & All database writes must use parameterized queries (no raw string interpolation in SQL) \\ \hline
+CON-06 & Row-Level Security (RLS) \textbf{must} be enabled on all public schema tables \\ \hline
+CON-07 & Financial calculations must use `DECIMAL(18,2)` types — never floating-point \\ \hline
+\end{longtable}
+\subsection{Business Constraints}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Constraint \\ \hline
+\hline
+CON-08 & Double-entry bookkeeping rule: every transaction must have equal debits and credits \\ \hline
+CON-09 & Posted entries in closed accounting periods \textbf{cannot} be modified without reopening \\ \hline
+CON-10 & Physical deletion of financial records is \textbf{not permitted}; only soft-delete/void \\ \hline
+CON-11 & All monetary amounts stored in the organization's base currency; forex rates logged at transaction time \\ \hline
+CON-12 & Reports must comply with GAAP/IFRS format requirements \\ \hline
+\end{longtable}
+\subsection{Academic Project Constraints}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Constraint \\ \hline
+\hline
+CON-13 & Development timeline: approximately 8 academic weeks \\ \hline
+CON-14 & Team size: DBMS project team (typically 3–5 members) \\ \hline
+CON-15 & Infrastructure: Supabase free/pro tier; no dedicated server budget \\ \hline
+CON-16 & Scope for submission excludes: AI forecasting, payroll, blockchain, intercompany settlement \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\section{    - 3.7 Security Requirements}
+
+\subsubsection{Authentication \& Authorization}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Requirement \\ \hline
+\hline
+SEC-01 & All users must authenticate with email + password via Supabase Auth (JWT-based) \\ \hline
+SEC-02 & JWT tokens must expire after \textbf{1 hour}; refresh tokens after \textbf{30 min inactivity} \\ \hline
+SEC-03 & MFA (TOTP) must be available for all users; admin can enforce org-wide \\ \hline
+SEC-04 & Role-Based Access Control (RBAC) must be enforced at both application and database (RLS) levels \\ \hline
+SEC-05 & API endpoints must validate JWT on every request; unauthenticated requests receive HTTP 401 \\ \hline
+SEC-06 & Account lockout after \textbf{5 consecutive failed login attempts} for \textbf{15 minutes} \\ \hline
+SEC-07 & Password reset links must expire after \textbf{60 minutes} and be single-use \\ \hline
+\end{longtable}
+\subsection{Data Encryption}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Requirement \\ \hline
+\hline
+SEC-08 & All data in transit must use \textbf{TLS 1.3} \\ \hline
+SEC-09 & All data at rest must be encrypted using \textbf{AES-256} (managed by Supabase) \\ \hline
+SEC-10 & User passwords are \textbf{never stored in plaintext}; Supabase Auth uses bcrypt hashing \\ \hline
+SEC-11 & Backup files must be encrypted with customer-managed encryption keys \\ \hline
+SEC-12 & Receipt/document files in Supabase Storage must be stored in private buckets (not public URLs) \\ \hline
+\end{longtable}
+\subsection{Row-Level Security (RLS) Policies}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Policy & Rule \\ \hline
+\hline
+\textbf{Organization Isolation} & Users can only SELECT/INSERT/UPDATE/DELETE records where `organization\_id = auth.jwt()->>'org\_id'` \\ \hline
+\textbf{Role Enforcement} & DELETE operations on financial tables restricted to users with `role = 'administrator'` \\ \hline
+\textbf{Audit Log Protection} & `public.audit\_logs` is INSERT-only; no UPDATE or DELETE permitted by any role \\ \hline
+\textbf{Client Portal} & External clients can only SELECT their own invoice records \\ \hline
+\end{longtable}
+\subsection{Input Security}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Requirement \\ \hline
+\hline
+SEC-13 & All user inputs must be sanitized server-side to prevent SQL injection \\ \hline
+SEC-14 & File uploads must validate MIME type and limit size to \textbf{10 MB} \\ \hline
+SEC-15 & Rate limiting must be applied: max \textbf{100 API requests per minute per user} \\ \hline
+SEC-16 & CSRF protection enabled on all state-changing operations \\ \hline
+\end{longtable}
+\subsection{Audit \& Compliance}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Requirement \\ \hline
+\hline
+SEC-17 & All CREATE, UPDATE, DELETE, and VOID operations must generate an immutable audit log entry \\ \hline
+SEC-18 & Audit logs must capture: user ID, timestamp, action, affected table, old value, new value \\ \hline
+SEC-19 & Audit logs retained for minimum \textbf{7 years} per SOX compliance \\ \hline
+SEC-20 & System must support GDPR data export requests (user can download all their data) \\ \hline
+SEC-21 & System must support GDPR right-to-erasure (user PII deletable; financial records anonymized) \\ \hline
+\end{longtable}
+\subsection{Network Security}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+ID & Requirement \\ \hline
+\hline
+SEC-22 & Supabase project must have IP allowlisting enabled for database direct access \\ \hline
+SEC-23 & API keys (anon key) must be stored in secure environment config; never in source code \\ \hline
+SEC-24 & Production Supabase credentials must not be committed to version control \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\section{    - 3.8 Acceptance Criteria}
+
+\begin{quote}
+A feature is considered \textbf{complete} when all its acceptance criteria pass in a production-equivalent environment.
+\end{quote}
+
+\subsection{Authentication}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+AC-ID & Criterion \\ \hline
+\hline
+AC-AUTH-01 & User can register with valid email/password; confirmation email received \\ \hline
+AC-AUTH-02 & User can login and is redirected to dashboard within 2 seconds \\ \hline
+AC-AUTH-03 & Login with incorrect password shows error; account locks after 5 attempts \\ \hline
+AC-AUTH-04 & Password reset email received within 60 seconds; link expires after 60 minutes \\ \hline
+AC-AUTH-05 & Session auto-expires after 30 minutes of inactivity; user redirected to login \\ \hline
+AC-AUTH-06 & MFA can be enabled/disabled; TOTP code validated correctly \\ \hline
+\end{longtable}
+\subsection{Dashboard}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+AC-ID & Criterion \\ \hline
+\hline
+AC-DASH-01 & All KPI widgets load within 2 seconds on a dataset of 100,000 transactions \\ \hline
+AC-DASH-02 & Revenue vs Expense chart accurately reflects transaction data for selected period \\ \hline
+AC-DASH-03 & Dashboard reflects new transaction within 5 seconds of posting \\ \hline
+AC-DASH-04 & Negative cash balance triggers an alert notification \\ \hline
+\end{longtable}
+\subsection{Transactions}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+AC-ID & Criterion \\ \hline
+\hline
+AC-TX-01 & Valid transaction saves in < 500ms and appears in cashbook and ledger \\ \hline
+AC-TX-02 & Transaction with amount = 0 or negative is rejected with validation error \\ \hline
+AC-TX-03 & CSV import of 1,000 rows completes in < 10 seconds; invalid rows reported \\ \hline
+AC-TX-04 & Voided transaction reverses ledger balances correctly; void reason recorded \\ \hline
+AC-TX-05 & Search with filters returns correct results within 1 second \\ \hline
+\end{longtable}
+\subsection{Ledger \& Cashbook}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+AC-ID & Criterion \\ \hline
+\hline
+AC-LG-01 & Manual journal entry with unequal debits/credits is rejected \\ \hline
+AC-LG-02 & Trial balance totals agree (Total Debits = Total Credits) after any valid posting \\ \hline
+AC-LG-03 & Cashbook running balance matches sum of all debit-credit entries \\ \hline
+AC-LG-04 & Entries in closed periods cannot be edited without period re-opening \\ \hline
+\end{longtable}
+\subsection{Clients \& Invoices}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+AC-ID & Criterion \\ \hline
+\hline
+AC-CL-01 & Client with duplicate email within same org is rejected \\ \hline
+AC-CL-02 & Invoice PDF generated with correct totals, line items, and invoice number format \\ \hline
+AC-CL-03 & Invoice status changes to "Overdue" automatically when due date passes with outstanding balance \\ \hline
+AC-CL-04 & Client outstanding balance matches sum of all unpaid invoices \\ \hline
+\end{longtable}
+\subsection{Reports}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+AC-ID & Criterion \\ \hline
+\hline
+AC-RP-01 & P\&L report: Net Profit = Total Revenue − Total Expenses (verified against manual calculation) \\ \hline
+AC-RP-02 & Balance Sheet: Total Assets = Total Liabilities + Total Equity \\ \hline
+AC-RP-03 & Cash Flow net change reconciles with opening and closing cashbook balance \\ \hline
+AC-RP-04 & PDF/Excel export downloads correctly and contains all displayed data \\ \hline
+AC-RP-05 & Scheduled report email delivered within 5 minutes of scheduled time \\ \hline
+\end{longtable}
+\subsection{Security}
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+AC-ID & Criterion \\ \hline
+\hline
+AC-SEC-01 & User A cannot access User B's organization data under any authenticated request \\ \hline
+AC-SEC-02 & Accountant role cannot access User Management settings \\ \hline
+AC-SEC-03 & Audit log entry is created for every transaction creation, update, and void \\ \hline
+AC-SEC-04 & Audit logs cannot be edited or deleted via any UI or API call \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\section{Appendix}
+
+\subsection{Glossary}
+
+\begin{longtable}{|p{0.47\textwidth}|p{0.47\textwidth}|}
+\hline
+Term & Definition \\ \hline
+\hline
+\textbf{Double-Entry Bookkeeping} & An accounting system where every transaction has equal debit and credit entries \\ \hline
+\textbf{Trial Balance} & A summary listing all accounts and their balances; total debits must equal total credits \\ \hline
+\textbf{Aging Schedule} & A report grouping outstanding receivables by how overdue they are \\ \hline
+\textbf{Chart of Accounts} & A structured list of all financial accounts used by an organization \\ \hline
+\textbf{Soft Delete} & Marking a record as inactive/voided without removing it from the database \\ \hline
+\textbf{Multi-Tenancy} & A single application instance serving multiple organizations with full data isolation \\ \hline
+\textbf{RLS} & Row-Level Security — a PostgreSQL feature restricting data access at the row level based on user context \\ \hline
+\textbf{JWT} & JSON Web Token — a signed token used to authenticate API requests \\ \hline
+\textbf{TOTP} & Time-based One-Time Password — used for MFA \\ \hline
+\textbf{Fiscal Year} & A 12-month accounting period used for financial reporting \\ \hline
+\textbf{Reconciliation} & The process of ensuring two sets of records (e.g., cashbook and bank statement) agree \\ \hline
+\end{longtable}
+\subsection{Technology Stack Summary}
+
+\begin{longtable}{|p{0.32\textwidth}|p{0.32\textwidth}|p{0.32\textwidth}|}
+\hline
+Layer & Technology & Version \\ \hline
+\hline
+Frontend Framework & Flutter & 3.x \\ \hline
+Language & Dart & ^3.8.1 \\ \hline
+State Management & flutter\_riverpod & ^2.6.1 \\ \hline
+Navigation & go\_router & ^14.6.2 \\ \hline
+Backend & Supabase & Latest \\ \hline
+Database & PostgreSQL & 15 \\ \hline
+Charts & fl\_chart & ^0.70.0 \\ \hline
+Typography & google\_fonts & ^6.2.1 \\ \hline
+Icons & font\_awesome\_flutter & ^10.7.0 \\ \hline
+Local Storage & shared\_preferences & ^2.3.4 \\ \hline
+\end{longtable}
+\subsection{Revision History}
+
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Version & Date & Author & Description \\ \hline
+\hline
+1.0 & 2026-05-11 & Project Team & Initial SRS draft \\ \hline
+\end{longtable}
+\subsection{Document Approval}
+
+\begin{longtable}{|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|p{0.24\textwidth}|}
+\hline
+Role & Name & Signature & Date \\ \hline
+\hline
+Project Lead &  &  &  \\ \hline
+Technical Lead &  &  &  \\ \hline
+QA Lead &  &  &  \\ \hline
+Client Representative &  &  &  \\ \hline
+\end{longtable}
+\vspace{1em}\hrule\vspace{1em}
+
+\textit{End of Software Requirements Specification — Smart Ledger v1.0}
+
+\end{document}

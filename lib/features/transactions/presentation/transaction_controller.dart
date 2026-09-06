@@ -1,7 +1,10 @@
-import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
-import 'package:dbms_project/features/transactions/data/supabase_transaction_repository.dart';
-import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
+import 'package:smart_ledger/features/accounting/data/accounting_service.dart';
+import 'package:smart_ledger/features/accounting/data/supabase_accounting_repository.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_controller.dart';
+import 'package:smart_ledger/features/transactions/data/supabase_transaction_repository.dart';
+import 'package:smart_ledger/features/transactions/domain/models/transaction_model.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -31,7 +34,7 @@ class TransactionController extends _$TransactionController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       // 1. Add Transaction
-      await ref
+      final transaction = await ref
           .read(transactionRepositoryProvider)
           .addTransaction(
             amount: amount,
@@ -59,8 +62,17 @@ class TransactionController extends _$TransactionController {
         ref.invalidate(customerControllerProvider);
       }
 
-      // 3. Refresh self (recent transactions)
-      // 3. Refresh self (recent transactions)
+      // 3. Create accounting journal in the background.
+      // If accounting tables are not created yet, keep existing transaction flow working.
+      try {
+        await AccountingService(
+          ref.read(accountingRepositoryProvider),
+        ).createJournalFromTransaction(transaction);
+      } catch (e) {
+        debugPrint('Accounting journal creation skipped: $e');
+      }
+
+      // 4. Refresh self (recent transactions)
       return ref.refresh(transactionRepositoryProvider).getRecentTransactions();
     });
 

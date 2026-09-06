@@ -1,9 +1,8 @@
-import 'package:dbms_project/features/customers/data/supabase_customer_repository.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
-import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
-import 'package:dbms_project/features/transactions/data/supabase_transaction_repository.dart';
-import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
-import 'package:dbms_project/features/transactions/presentation/transaction_controller.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_controller.dart';
+
+import 'package:smart_ledger/features/transactions/domain/models/transaction_model.dart';
+import 'package:smart_ledger/features/transactions/presentation/transaction_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'dashboard_controller.g.dart';

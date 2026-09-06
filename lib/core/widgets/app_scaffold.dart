@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget child;

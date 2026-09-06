@@ -12,11 +12,12 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# IntelliJ / Editor related
 *.iml
 *.ipr
 *.iws
 .idea/
+.cursor/
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line

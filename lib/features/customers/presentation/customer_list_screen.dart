@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
-import 'package:dbms_project/features/customers/presentation/widgets/customer_card.dart';
-import 'package:dbms_project/features/customers/presentation/widgets/add_customer_sheet.dart';
-import 'package:dbms_project/features/customers/presentation/customer_controller.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
+import 'package:smart_ledger/features/customers/presentation/widgets/customer_card.dart';
+import 'package:smart_ledger/features/customers/presentation/widgets/add_customer_sheet.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_controller.dart';
 import 'package:go_router/go_router.dart';
 
 class CustomerListScreen extends ConsumerStatefulWidget {
@@ -17,7 +17,7 @@ class CustomerListScreen extends ConsumerStatefulWidget {
 class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _filterType = 'All'; // 'All', 'To Receive', 'To Pay'
+  String _filterType = 'All'; // All, Customers, Suppliers, To Receive, To Pay
 
   @override
   void initState() {
@@ -47,20 +47,12 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       if (!matchesSearch) return false;
 
       // 2. Type Filter
-      if (_filterType == 'To Receive') {
-        return customer.totalDue >
-            0; // Negative balance means "To Pay" in some contexts?
-        // Let's clarify: due means "To Receive" usually (positive balance).
-        // If Model says `totalDue = totalGiven - totalReceived`.
-        // If result is positive -> customer owes us -> 'To Receive'.
-        // If negative -> we owe customer -> 'To Pay'.
-        // Wait, check CustomerModel logic. Assuming totalDue getter handles this or separate fields.
-        // Let's assume standard: totalGiven (Income) - totalReceived (Expense).
-        // Actually usually ledger:
-        // Debit (You gave) - Credit (You received) = Balance.
-        // If Balance > 0 -> You are owed money (To Receive).
-        // If Balance < 0 -> You owe money (To Pay).
-        // Checking CustomerModel properties to be sure.
+      if (_filterType == 'Customers') {
+        return customer.isCustomer;
+      } else if (_filterType == 'Suppliers') {
+        return customer.isSupplier;
+      } else if (_filterType == 'To Receive') {
+        return customer.totalDue > 0;
       } else if (_filterType == 'To Pay') {
         return customer.totalDue < 0;
       }
@@ -72,15 +64,20 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerControllerProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Customers'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Customers & Suppliers'),
+        centerTitle: false,
+      ),
+
       body: Column(
         children: [
           // Search & Filter
           Container(
             padding: const EdgeInsets.all(16),
-            color: AppColors.backgroundLight,
+            color: colorScheme.surface,
             child: Column(
               children: [
                 TextField(
@@ -89,7 +86,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                     hintText: 'Search by name, phone...',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: colorScheme.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -98,14 +95,21 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _buildFilterChip('All'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('To Receive'), // Due
-                    const SizedBox(width: 8),
-                    _buildFilterChip('To Pay'), // Advance
-                  ],
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('All'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Customers'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Suppliers'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('To Receive'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('To Pay'),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -120,7 +124,13 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 final filteredCustomers = _filterCustomers(allCustomers);
 
                 if (filteredCustomers.isEmpty) {
-                  return const Center(child: Text('No customers found.'));
+                  return Center(
+                    child: Text(
+                      _filterType == 'Suppliers'
+                          ? 'No suppliers found.'
+                          : 'No customers or suppliers found.',
+                    ),
+                  );
                 }
 
                 // Calculate Totals based on filtered list? Or all? Usually filtered.
@@ -136,7 +146,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      color: AppColors.primary.withOpacity(0.05),
+                      color: colorScheme.primary.withOpacity(0.08),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -192,7 +202,8 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             builder: (context) => const AddCustomerSheet(),
           );
         },
-        label: const Text('Add Customer'),
+        label: const Text('Add Party'),
+
         icon: const Icon(Icons.person_add),
       ),
     );
@@ -208,17 +219,21 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           _filterType = label;
         });
       },
-      backgroundColor: Colors.white,
-      selectedColor: AppColors.primary.withOpacity(0.2),
-      checkmarkColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+      checkmarkColor: Theme.of(context).colorScheme.primary,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textSecondaryLight,
+        color: isSelected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? AppColors.primary : Colors.grey.shade300,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.outlineVariant,
         ),
       ),
     );

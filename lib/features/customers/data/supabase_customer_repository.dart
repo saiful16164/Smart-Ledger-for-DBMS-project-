@@ -1,5 +1,5 @@
-import 'package:dbms_project/core/constants/supabase_constants.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
+import 'package:smart_ledger/core/constants/supabase_constants.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseCustomerRepository {
@@ -31,6 +31,7 @@ class SupabaseCustomerRepository {
     String? phone,
     String? email,
     String? address,
+    PartyType partyType = PartyType.customer,
   }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
@@ -43,6 +44,7 @@ class SupabaseCustomerRepository {
           'phone': phone,
           'email': email,
           'address': address,
+          'party_type': partyType.value,
           'total_given': 0,
           'total_received': 0,
         })
@@ -58,6 +60,7 @@ class SupabaseCustomerRepository {
     String? phone,
     String? email,
     String? address,
+    PartyType? partyType,
   }) async {
     final data = await _supabase
         .from(SupabaseConstants.tableCustomers)
@@ -66,6 +69,7 @@ class SupabaseCustomerRepository {
           'phone': phone,
           'email': email,
           'address': address,
+          if (partyType != null) 'party_type': partyType.value,
         })
         .eq('id', id)
         .select()

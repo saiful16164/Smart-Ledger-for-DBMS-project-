@@ -7,4 +7,7 @@ class SupabaseConstants {
   static const String tableProfiles = 'profiles';
   static const String tableCustomers = 'customers';
   static const String tableTransactions = 'transactions';
+  static const String tableAccounts = 'accounts';
+  static const String tableJournalEntries = 'journal_entries';
+  static const String tableJournalLines = 'journal_lines';
 }

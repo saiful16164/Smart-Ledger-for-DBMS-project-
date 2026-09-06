@@ -1,5 +1,5 @@
-import 'package:dbms_project/core/constants/supabase_constants.dart';
-import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
+import 'package:smart_ledger/core/constants/supabase_constants.dart';
+import 'package:smart_ledger/features/transactions/domain/models/transaction_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseTransactionRepository {

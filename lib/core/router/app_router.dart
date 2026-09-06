@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:dbms_project/core/widgets/app_scaffold.dart';
-import 'package:dbms_project/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:smart_ledger/core/widgets/app_scaffold.dart';
+import 'package:smart_ledger/features/dashboard/presentation/dashboard_screen.dart';
 // Placeholder imports for other screens
-import 'package:dbms_project/features/customers/presentation/customer_list_screen.dart';
-import 'package:dbms_project/features/cashbook/presentation/cashbook_screen.dart';
-import 'package:dbms_project/features/reports/presentation/reports_screen.dart';
-import 'package:dbms_project/features/settings/presentation/settings_screen.dart';
-import 'package:dbms_project/features/transactions/presentation/add_transaction_screen.dart';
-import 'package:dbms_project/features/customers/presentation/customer_detail_screen.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
-import 'package:dbms_project/features/settings/presentation/help_support_screen.dart';
-import 'package:dbms_project/features/settings/presentation/privacy_policy_screen.dart';
-import 'package:dbms_project/features/auth/presentation/login_screen.dart';
-import 'package:dbms_project/features/auth/presentation/signup_screen.dart';
-import 'package:dbms_project/features/auth/presentation/auth_controller.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_list_screen.dart';
+import 'package:smart_ledger/features/cashbook/presentation/cashbook_screen.dart';
+import 'package:smart_ledger/features/reports/presentation/reports_screen.dart';
+import 'package:smart_ledger/features/settings/presentation/settings_screen.dart';
+import 'package:smart_ledger/features/transactions/presentation/add_transaction_screen.dart';
+import 'package:smart_ledger/features/customers/presentation/customer_detail_screen.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
+import 'package:smart_ledger/features/settings/presentation/help_support_screen.dart';
+import 'package:smart_ledger/features/settings/presentation/privacy_policy_screen.dart';
+import 'package:smart_ledger/features/auth/presentation/login_screen.dart';
+import 'package:smart_ledger/features/auth/presentation/signup_screen.dart';
+import 'package:smart_ledger/features/auth/presentation/auth_controller.dart';
+import 'package:smart_ledger/features/accounting/presentation/chart_of_accounts_screen.dart';
+import 'package:smart_ledger/features/accounting/presentation/journal_screen.dart';
+import 'package:smart_ledger/features/accounting/presentation/ledger_screen.dart';
+import 'package:smart_ledger/features/accounting/presentation/trial_balance_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 
@@ -100,6 +104,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final customer = state.extra as CustomerModel;
           return CustomerDetailScreen(customer: customer);
         },
+      ),
+      GoRoute(
+        path: '/accounting/accounts',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ChartOfAccountsScreen(),
+      ),
+      GoRoute(
+        path: '/accounting/journal',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const JournalScreen(),
+      ),
+      GoRoute(
+        path: '/accounting/ledger',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const LedgerScreen(),
+      ),
+      GoRoute(
+        path: '/accounting/trial-balance',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TrialBalanceScreen(),
       ),
       GoRoute(
         path: '/help-support',

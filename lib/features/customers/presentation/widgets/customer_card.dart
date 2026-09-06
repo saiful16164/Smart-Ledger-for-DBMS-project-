@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
-import 'package:dbms_project/features/customers/domain/models/customer_model.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
+import 'package:smart_ledger/features/customers/domain/models/customer_model.dart';
 
 class CustomerCard extends StatelessWidget {
   final CustomerModel customer;
@@ -11,6 +10,10 @@ class CustomerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final secondaryTextColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withOpacity(0.65);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -40,25 +43,34 @@ class CustomerCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      customer.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            customer.name,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Chip(
+                          label: Text(customer.partyType.label),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ],
                     ),
+
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.phone,
-                          size: 14,
-                          color: AppColors.textSecondaryLight,
-                        ),
+                        Icon(Icons.phone, size: 14, color: secondaryTextColor),
                         const SizedBox(width: 4),
                         Text(
                           customer.phone ?? 'No Phone',
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppColors.textSecondaryLight),
+                              ?.copyWith(color: secondaryTextColor),
                         ),
                       ],
                     ),
@@ -78,16 +90,15 @@ class CustomerCard extends StatelessWidget {
                           ? AppColors.success
                           : (customer.isPayable
                                 ? AppColors.error
-                                : AppColors.textSecondaryLight),
+                                : secondaryTextColor),
                     ),
                   ),
                   if (customer.totalDue != 0)
                     Row(
                       children: [
                         Text(
-                          customer.isReceivable
-                              ? 'You\'ll Get'
-                              : 'You\'ll Give',
+                          customer.balanceLabel,
+
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: customer.isReceivable
@@ -110,10 +121,7 @@ class CustomerCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondaryLight,
-              ),
+              Icon(Icons.chevron_right, color: secondaryTextColor),
             ],
           ),
         ),

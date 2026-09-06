@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/app.dart';
-import 'package:dbms_project/features/auth/presentation/auth_controller.dart';
+import 'package:smart_ledger/app.dart';
+import 'package:smart_ledger/features/auth/presentation/auth_controller.dart';
 
 void main() {
   testWidgets('App renders without crashing', (WidgetTester tester) async {

@@ -27,7 +27,7 @@ final customerRepositoryProvider =
 typedef CustomerRepositoryRef =
     AutoDisposeProviderRef<SupabaseCustomerRepository>;
 String _$customerControllerHash() =>
-    r'9a8b40cc3926aa4678d32700aa5b963bf607b830';
+    r'85ac744d4079307fec70b937b160c0107a131455';
 
 /// See also [CustomerController].
 @ProviderFor(CustomerController)

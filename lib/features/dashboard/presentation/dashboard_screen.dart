@@ -1,10 +1,10 @@
-import 'package:dbms_project/features/dashboard/presentation/dashboard_controller.dart';
+import 'package:smart_ledger/features/dashboard/presentation/dashboard_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dbms_project/core/theme/app_colors.dart';
+import 'package:smart_ledger/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dbms_project/features/customers/presentation/widgets/add_customer_sheet.dart';
-import 'package:dbms_project/features/transactions/domain/models/transaction_model.dart';
+import 'package:smart_ledger/features/customers/presentation/widgets/add_customer_sheet.dart';
+import 'package:smart_ledger/features/transactions/domain/models/transaction_model.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
